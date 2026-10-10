@@ -1,0 +1,1115 @@
+<title>Surface модификаторы</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* Концепция: 3ds Max көрінісінің (viewport) тілі. Тақта салқын көкшіл-сұр, бет жасыл, шыңдар сары. */
+:root{
+  --bg:#edf1f4; --panel:#ffffff; --panel2:#f3f6f8; --fg:#0f1b26; --muted:#516476; --line:#d3dce4;
+  --accent:#0a7d5e; --accent-ink:#ffffff; --accent-soft:#d7f0e7;
+  --warm:#b97800; --warm-soft:#fbefd0; --bad:#c13636; --bad-soft:#fbe1e1;
+  --font-body:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d141b; --panel:#16212b; --panel2:#1b2935; --fg:#e8eff5; --muted:#8ea2b3; --line:#2a3948;
+    --accent:#3fd9a0; --accent-ink:#04211a; --accent-soft:#12382f;
+    --warm:#f2b84b; --warm-soft:#3a2f12; --bad:#ff7b7b; --bad-soft:#40201f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d141b; --panel:#16212b; --panel2:#1b2935; --fg:#e8eff5; --muted:#8ea2b3; --line:#2a3948;
+  --accent:#3fd9a0; --accent-ink:#04211a; --accent-soft:#12382f;
+  --warm:#f2b84b; --warm-soft:#3a2f12; --bad:#ff7b7b; --bad-soft:#40201f; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+kbd{font-family:var(--font-mono);font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;background:var(--panel)}
+
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+
+/* ---------- жоғарғы жол ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:10px max(16px,2.4vw);border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{width:22px;height:22px;flex:none;border-radius:6px;background:linear-gradient(135deg,var(--accent) 0 50%,var(--warm) 50% 100%);transform:rotate(45deg) scale(.82)}
+.brand b{font-weight:800;letter-spacing:-.01em}
+.brand .sub{color:var(--muted);font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.phase{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding:5px 10px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 12px;font-family:var(--font-mono);font-size:13px;min-height:34px;white-space:nowrap}
+.pill:hover{border-color:var(--accent)}
+.pill[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.pill.warn{color:var(--warm);border-color:var(--warm)}
+.pill.late{color:var(--bad);border-color:var(--bad)}
+
+/* ---------- слайдтар ---------- */
+.stage{position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:clamp(12px,2.2vw,34px) max(16px,3vw);opacity:0;visibility:hidden;transform:translateX(28px);transition:opacity .35s ease,transform .35s ease,visibility 0s .35s}
+.slide.before{transform:translateX(-28px)}
+.slide.active{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.wrap{max-width:1280px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:clamp(12px,2vh,22px)}
+.eyebrow{margin:0;font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{margin:0;font-size:clamp(2.3rem,6vw,4.6rem);line-height:1;font-weight:800;letter-spacing:-.03em;text-wrap:balance}
+h2{margin:0;font-size:clamp(1.6rem,3.4vw,2.7rem);line-height:1.08;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+h3{margin:0;font-size:1.1rem;font-weight:700}
+p{margin:0}
+.lead{font-size:clamp(1.1rem,2vw,1.55rem);line-height:1.4;color:var(--muted);max-width:34em}
+.lead strong,.big strong{color:var(--fg);font-weight:600}
+.big{font-size:clamp(1.05rem,1.6vw,1.3rem);max-width:36em}
+.muted{color:var(--muted)}
+.hint{font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--font-mono);font-size:12.5px;padding:5px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,3vw,44px);align-items:center}
+.split.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stack-col{display:flex;flex-direction:column;gap:clamp(10px,1.6vh,18px);min-width:0}
+@media (max-width:860px){.split,.split.even{grid-template-columns:minmax(0,1fr)}}
+
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:10px;padding:11px 18px;min-height:44px;transition:transform .15s,filter .15s}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+
+.rv{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s ease}
+.rv.on{opacity:1;transform:none}
+
+/* ---------- viewport ---------- */
+.vp{position:relative;border-radius:14px;overflow:hidden;background:#242b32;border:1px solid #3a444d;height:clamp(280px,54vh,580px);min-width:0}
+.vp canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.vp canvas:active{cursor:grabbing}
+.vp-label{position:absolute;left:12px;top:9px;font-family:var(--font-mono);font-size:11.5px;color:#a9b6c1;pointer-events:none}
+.vp-hint{position:absolute;right:12px;bottom:9px;font-family:var(--font-mono);font-size:11.5px;color:#8c99a4;pointer-events:none}
+.vp-stack{position:absolute;right:12px;top:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;font-family:var(--font-mono);font-size:12px;pointer-events:none}
+.vp-stack span{padding:3px 9px;border-radius:5px;background:#2f373f;color:#c8d2da;border:1px solid #444f59;transition:all .4s}
+.vp-stack span.new{background:#1b4a3c;border-color:#3fd9a0;color:#d6fff0;opacity:0;transform:translateY(6px)}
+.vp-stack span.new.on{opacity:1;transform:none}
+
+/* ---------- слайд 2 ---------- */
+.goal-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:g}
+.goal-list li{counter-increment:g;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;font-size:clamp(1.02rem,1.5vw,1.25rem)}
+.goal-list li::before{content:counter(g);display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-family:var(--font-mono);font-weight:600}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tl-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.tl-min{font-family:var(--font-mono);font-weight:600;font-size:15px}
+.tl-t{font-weight:600}
+.tl-d{font-size:14px;color:var(--muted)}
+.tl-bar{height:6px;border-radius:3px;background:var(--panel2);margin-top:6px;overflow:hidden}
+.tl-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .9s .2s cubic-bezier(.2,.8,.2,1)}
+.tl-row.on .tl-bar i{width:var(--w)}
+
+/* ---------- слайд 4 ---------- */
+.cells-svg{width:100%;height:auto;max-height:46vh;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.cells-svg .cell{fill:transparent;stroke:var(--fg);stroke-width:2.5;transition:fill .6s}
+.cells-svg.on .cell.ok{fill:var(--accent-soft)}
+.cells-svg.on .cell.bad{fill:url(#hatch)}
+.cells-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2}
+.cells-svg text{font-family:var(--font-mono);font-size:17px;fill:var(--fg)}
+.cells-svg .tag{font-weight:600}
+.cells-svg .tag.ok{fill:var(--accent)}
+.cells-svg .tag.bad{fill:var(--bad)}
+
+/* ---------- слайд 5 ---------- */
+.steps5{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;counter-reset:s}
+.step5{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.step5::before{content:counter(s);width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;font-family:var(--font-mono)}
+.step5 h3{font-size:1.12rem}
+.step5 p{font-size:14.5px;color:var(--muted)}
+.code{font-family:var(--font-mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:4px 8px;color:var(--fg);align-self:flex-start}
+
+/* ---------- лаборатория ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+.ro{background:#2b3238;color:#d6dee5;border:1px solid #3d4750;border-radius:10px;font-family:var(--font-mono);font-size:12.5px;overflow:hidden}
+.ro-head{background:#39424b;padding:6px 10px;font-weight:600;letter-spacing:.04em;color:#eef3f7}
+.ro-body{padding:10px;display:flex;flex-direction:column;gap:7px}
+.ro label{display:flex;align-items:center;gap:7px;min-height:24px;cursor:pointer}
+.ro input[type=checkbox]{width:16px;height:16px;accent-color:#3fd9a0}
+.ro input[type=range]{width:100%;accent-color:#3fd9a0}
+.ro .val{margin-left:auto;color:#f2b84b;min-width:34px;text-align:right}
+.ro .sep{height:1px;background:#3d4750}
+.ro .line{display:flex;align-items:center;gap:8px}
+.ro .dim{color:#8e9ba6}
+.ro .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ro .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ro .btns button{background:#3a444d;border:1px solid #4a5560;color:#e5ecf1;border-radius:6px;padding:6px 2px;font-family:var(--font-mono);font-size:12px;min-height:32px}
+.ro .btns button:hover{border-color:#3fd9a0}
+.stats{color:#aeb9c3;line-height:1.55}
+.stats b{color:#fff;font-weight:600}
+.asks{display:flex;flex-wrap:wrap;gap:8px}
+.ask{font-size:14px;padding:7px 12px;border-radius:10px;background:var(--panel);border:1px dashed var(--accent);color:var(--fg)}
+
+/* ---------- Threshold ---------- */
+.thr-svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.thr-svg text{font-family:var(--font-mono);font-size:15px;fill:var(--fg)}
+.thr-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2}
+.slider{display:flex;flex-direction:column;gap:4px}
+.slider label{display:flex;justify-content:space-between;font-weight:600}
+.slider output{font-family:var(--font-mono);color:var(--accent)}
+.slider input{width:100%;accent-color:var(--accent)}
+.verdict{padding:12px 14px;border-radius:12px;font-weight:600;border:1px solid var(--line);background:var(--panel)}
+.verdict.good{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.verdict.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* ---------- қатені тап ---------- */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;min-height:40px}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab.done::after{content:" ✓"}
+.case-svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;max-height:52vh}
+.case-svg .cell{stroke:var(--fg);stroke-width:2.5;transition:fill .7s}
+.case-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2;transition:opacity .6s}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;font-size:1.02rem;min-height:52px}
+.opt i{font-style:normal;display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:var(--panel2);font-family:var(--font-mono);font-weight:600}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{background:var(--accent-soft);border-color:var(--accent)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.explain{min-height:3.2em;padding:12px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:.98rem}
+.score{font-family:var(--font-mono);color:var(--muted)}
+
+/* ---------- практика ---------- */
+.t-only#gbBtn,.t-only#bdBtn{display:none!important}
+#wheelbox .wh-btns,#wheelbox .wh-note{display:none}
+.prac{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.prac{grid-template-columns:minmax(0,1fr)}}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.todo label{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);cursor:pointer}
+.todo input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.todo label:has(input:checked){background:var(--accent-soft);border-color:var(--accent)}
+.todo label:has(input:checked) span{opacity:.72}
+.todo em{font-style:normal;font-family:var(--font-mono);font-size:.86em;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+.meter{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s}
+.tip{padding:12px 14px;border-radius:12px;background:var(--warm-soft);border:1px solid var(--warm);font-size:.95rem}
+.tip b{color:var(--warm)}
+
+/* ---------- тест ---------- */
+.quiz{max-width:860px}
+.qbar{display:flex;gap:6px}
+.qbar i{flex:1;height:6px;border-radius:3px;background:var(--panel2);transition:background .3s}
+.qbar i.on{background:var(--accent)}
+.qbar i.bad{background:var(--bad)}
+.qtext{font-size:clamp(1.25rem,2.4vw,1.8rem);font-weight:700;line-height:1.25;text-wrap:balance}
+.result{display:flex;flex-direction:column;gap:10px}
+.result .num{font-size:clamp(3rem,9vw,6rem);font-weight:800;letter-spacing:-.04em;color:var(--accent);line-height:1}
+
+/* ---------- қорытынды ---------- */
+.take{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.take div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.take b{display:block;font-family:var(--font-mono);font-size:13px;color:var(--accent);margin-bottom:4px;font-weight:600}
+.r321{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.r321{grid-template-columns:minmax(0,1fr)}}
+.r321 div{border:1px dashed var(--accent);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.r321 strong{font-size:2.2rem;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1}
+
+/* ---------- жазбалар ---------- */
+.notes{position:absolute;left:max(12px,2vw);right:max(12px,2vw);bottom:8px;z-index:5;background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(0,0,0,.28);max-height:44%;overflow:auto}
+.notes h4{margin:0 0 6px;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes p{font-size:.98rem}
+
+/* ---------- төменгі навигация ---------- */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px max(16px,2.4vw);border-top:1px solid var(--line);background:var(--panel)}
+.nav .btn{min-width:46px;padding:8px 14px}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;flex:1}
+.dot{width:12px;height:12px;border-radius:50%;border:0;background:var(--line);padding:0;position:relative}
+.dot::after{content:"";position:absolute;inset:-8px}
+.dot.on{background:var(--accent);transform:scale(1.35)}
+.count{font-family:var(--font-mono);font-size:13px;color:var(--muted);min-width:54px;text-align:center}
+
+/* ---------- мазмұн мәзірі ---------- */
+.menu{position:fixed;left:0;top:0;bottom:0;width:min(390px,92vw);z-index:60;background:var(--panel);border-right:1px solid var(--line);box-shadow:12px 0 40px rgba(0,0,0,.25);display:flex;flex-direction:column;transform:translateX(-102%);visibility:hidden;transition:transform .28s ease,visibility 0s .28s}
+.menu.open{transform:none;visibility:visible;transition-delay:0s}
+.menu-scrim{position:fixed;inset:0;z-index:55;background:rgba(8,14,20,.45);opacity:0;pointer-events:none;transition:opacity .25s}
+.menu-scrim.open{opacity:1;pointer-events:auto}
+.menu-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.menu-head b{font-size:1.1rem}
+.menu-list{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+.mi{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);min-height:50px}
+.mi:hover{border-color:var(--accent)}
+.mi.on{background:var(--accent-soft);border-color:var(--accent)}
+.mi .n{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--panel);font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+.mi .t{font-weight:600;line-height:1.2}
+.mi .ph{font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.mi.key{border-color:var(--warm)}
+.menu-foot{padding:10px 16px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.rub{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.rub div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:.93rem;align-items:start;line-height:1.35}
+.rub b{font-family:var(--font-mono);color:var(--accent);white-space:nowrap}
+.rub .tot{border-top:1px dashed var(--line);padding-top:7px;font-weight:600}
+@media (max-width:560px){.brand .sub{display:none}.top{gap:8px 10px}.pill{padding:5px 10px}}
+/*@INJECT-CSS*/
+@media (prefers-reduced-motion: reduce){
+  .slide,.rv,.tl-bar i,.cells-svg .cell,.case-svg .cell,.vp-stack span{transition:none!important}
+  .rv{transform:none}
+  .opt.wrong{animation:none}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="9" height="9" style="fill:var(--bad-soft)"/>
+      <line x1="0" y1="0" x2="0" y2="9" style="stroke:var(--bad);stroke-width:3"/>
+    </pattern>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><button class="pill" id="menuBtn" aria-expanded="false" aria-controls="menu" title="Мазмұны: кез келген слайдқа өту (M)">☰ Мазмұны</button><span class="mark" aria-hidden="true"></span><b>Surface</b><span class="sub">3ds Max · практика №7–8</span></div>
+    <div class="tools">
+      <span class="phase" id="phase">Кіріспе · 5 мин</span>
+      <!--@S--><button class="pill s-only" id="toPrac" title="Практика мен критерийлерге өту">Практика →</button><!--@/S-->
+      <!--@T-->
+      <button class="pill t-only" id="timerBtn" aria-pressed="false" title="Таймер: бастау / тоқтату (T)">▶ 50:00</button>
+      <button class="pill t-only" id="timerReset" title="Таймерді қайта қою">↺</button>
+      <button class="pill t-only" id="notesBtn" aria-pressed="false" title="Жазбалар (N)">Жазба</button>
+      <a class="pill t-only" id="liveLink" href="teacher.html" target="_blank" rel="noopener" title="Журнал: код, шақырулар, баллдар, рейтинг (G)">Журнал</a>
+      <button class="pill t-only" id="gbBtn" title="Журнал: тіркеу және бағалау (G)">Журнал</button>
+      <button class="pill t-only" id="bdBtn" title="Балл кестесі тақтада (B)">Кесте</button>
+      <button class="pill t-only" id="whBtn" aria-pressed="false" title="Айналдыру: сұраққа жауап беретін студентті таңдау (W)">🎡 Айналдыру</button>
+      <!--@/T-->
+      <button class="pill" id="themeBtn" title="Тақырып: жарық / қараңғы">◐</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split">
+          <div class="stack-col">
+            <p class="eyebrow">3ds Max · практикалық сабақ № 7–8</p>
+            <h1>Surface<br>модификаторы</h1>
+            <p class="lead">Бірнеше сызықтан тұтас <strong>3D бет</strong> қалай пайда болады?</p>
+            <div class="chips"><span class="chip">50 минут</span><span class="chip">Компьютерлік инженерия</span><span class="chip">Сплайн → Бет → Қалыңдық</span></div>
+            <p class="hint">Алға: <kbd>→</kbd> немесе <kbd>Space</kbd></p>
+          </div>
+          <div class="vp"><canvas id="heroCanvas" aria-label="Жапырақ қаңқасынан бет пайда болатын 3D анимация"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Shaded ]</span><span class="vp-hint">тінтуірмен айналдыруға болады</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split even">
+          <div class="stack-col">
+            <p class="eyebrow">Сабақ мақсаты</p>
+            <h2>Сабақ соңында сіз…</h2>
+            <ol class="goal-list">
+              <li><span>Сплайн қаңқасының <strong>негізгі ережесін</strong> айтасыз</span></li>
+              <li><span><strong>Surface</strong> модификаторымен бет жасайсыз</span></li>
+              <li><span><strong>Steps, Flip Normals, Shell</strong> параметрлерін өзгертесіз</span></li>
+            </ol>
+            <p class="hint"><strong>Бағалау:</strong> қатысым 40 балл + тапсырмалар 60 балл = 100 балл. Критерийлер 9-слайдта.</p>
+          </div>
+          <div class="tl" id="timeline">
+            <div class="tl-row rv" style="--w:13%"><span class="tl-min">4 мин</span><div><div class="tl-t">Кіріспе</div><div class="tl-d">Қызық мысал және мақсат</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:20%"><span class="tl-min">6 мин</span><div><div class="tl-t">Түсіндіру</div><div class="tl-d">Ереже, 5 қадам, параметрлер</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:13%"><span class="tl-min">4 мин</span><div><div class="tl-t">Қатені тап</div><div class="tl-d">Үш жағдай, жұппен талқылау</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:100%"><span class="tl-min">30 мин</span><div><div class="tl-t">Практика</div><div class="tl-d">Жапырақ, гүл құмырасы, қасық</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:20%"><span class="tl-min">6 мин</span><div><div class="tl-t">Тест және қорытынды</div><div class="tl-d">5 сұрақ, жұмыстарды көрсету, рефлексия</div><div class="tl-bar"><i></i></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split">
+          <div class="stack-col">
+            <p class="eyebrow">Сиқыр</p>
+            <h2>Үш сызық әлі бет емес</h2>
+            <p class="big">Қараңыз: бұл жерде тек <strong>сызықтар мен шыңдар</strong> бар. Ішінде ештеңе жоқ, жапырақтың беті көрінбейді.</p>
+            <p class="big" id="hookQ"><strong>Сұрақ:</strong> компьютер сызықтардың арасын «жабу» үшін не істеуі керек?</p>
+            <p class="big" id="hookA" style="display:none">Модификатор сызықтардың арасына <strong>бет тартты</strong>. Сымнан қаңқа жасап, үстіне мата тартқандай. Көлік корпусы, аяқ киім, ыдыс осылай жасалады.</p>
+            <div class="row"><button class="btn" id="hookBtn">Surface қосу</button><button class="btn ghost" id="hookReset">Қайта бастау</button></div>
+          </div>
+          <div class="vp"><canvas id="hookCanvas" aria-label="Қаңқаға Surface қосу"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Wireframe ]</span>
+            <div class="vp-stack"><span class="new" id="hookNew">Surface</span><span>Editable Spline</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <p class="eyebrow">Негізгі ереже</p>
+        <h2>Қаңқаның әр ұясында 3 немесе 4 шың</h2>
+        <svg class="cells-svg" id="cellsSvg" viewBox="0 0 760 280" role="img" aria-label="Үшбұрыш және төртбұрыш ұялар жабылады, бесбұрыш тесік болып қалады">
+          <polygon class="cell ok" points="130,215 270,215 200,80"/>
+          <g class="vtx-g"><rect class="vtx" x="123" y="208" width="14" height="14"/><rect class="vtx" x="263" y="208" width="14" height="14"/><rect class="vtx" x="193" y="73" width="14" height="14"/></g>
+          <text class="tag ok" x="200" y="255" text-anchor="middle">3 шың · бет бар</text>
+          <polygon class="cell ok" points="320,215 470,215 455,80 335,80"/>
+          <g><rect class="vtx" x="313" y="208" width="14" height="14"/><rect class="vtx" x="463" y="208" width="14" height="14"/><rect class="vtx" x="448" y="73" width="14" height="14"/><rect class="vtx" x="328" y="73" width="14" height="14"/></g>
+          <text class="tag ok" x="395" y="255" text-anchor="middle">4 шың · бет бар</text>
+          <polygon class="cell bad" points="620,70 690,120 663,205 577,205 550,120"/>
+          <g><rect class="vtx" x="613" y="63" width="14" height="14"/><rect class="vtx" x="683" y="113" width="14" height="14"/><rect class="vtx" x="656" y="198" width="14" height="14"/><rect class="vtx" x="570" y="198" width="14" height="14"/><rect class="vtx" x="543" y="113" width="14" height="14"/></g>
+          <text class="tag bad" x="620" y="255" text-anchor="middle">5 шың · тесік</text>
+        </svg>
+        <div class="row"><button class="btn" id="cellsBtn">Surface қолдану</button><p class="hint">Бесбұрышты қалай түзетуге болады? Қосымша шыңды алып тастау немесе ұяны екіге бөлу.</p></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <p class="eyebrow">Тәсіл</p>
+        <h2>Surface жасаудың 5 қадамы</h2>
+        <div class="steps5" id="steps5">
+          <div class="step5 rv"><h3>Сызықтарды сал</h3><p>Бойлық 3 сплайн: сол жиек, ортасы, оң жиек. Шың саны бірдей.</p><span class="code">Create › Shapes › Line</span></div>
+          <div class="step5 rv"><h3>Бір нысанға біріктір</h3><p>Барлық сплайн бір Editable Spline болады.</p><span class="code">Geometry › Attach</span></div>
+          <div class="step5 rv"><h3>Қималарды қос</h3><p>Шыңдарға жабысатын көлденең сплайндар. Әр ұя 3–4 шыңнан тұрады.</p><span class="code">Snaps Toggle › Vertex</span></div>
+          <div class="step5 rv"><h3>Surface қолдан</h3><p>Қаңқаның бетіне бет тартылады. Threshold пен Steps реттеледі.</p><span class="code">Modifier List › Surface</span></div>
+          <div class="step5 rv"><h3>Бетті тексер</h3><p>Қара болса, Flip Normals. Қалыңдық керек болса, Shell.</p><span class="code">Flip Normals · Shell</span></div>
+        </div>
+        <p class="hint">Интерфейс ағылшынша. Аттарын осы жазылған күйінде іздеңіз.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Зертхана</p><h2>Параметрлерді өзіңіз өзгертіңіз</h2></div></div>
+        <div class="lab">
+          <div class="vp"><canvas id="labCanvas" aria-label="Surface параметрлерін өзгертуге болатын 3D көрініс"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Shaded + Edged ]</span><span class="vp-hint">сүйреп айналдырыңыз</span></div>
+          <div class="ro" id="labPanel">
+            <div class="ro-head">Modifier Stack</div>
+            <div class="ro-body">
+              <div class="two"><label><input type="checkbox" id="labShell"> Shell</label><label><input type="checkbox" id="labSurf" checked> Surface</label></div>
+              <div class="line dim">Editable Spline</div>
+              <div class="sep"></div>
+              <div class="line dim">Threshold <span class="val" style="color:#aeb9c3">0,1</span></div>
+              <div class="two"><label><input type="checkbox" id="labFlip"> Flip Normals</label><label><input type="checkbox" id="labTwo"> 2-Sided</label></div>
+              <div>Steps <span class="val" id="labStepsV">6</span><input type="range" id="labSteps" min="1" max="12" value="6" aria-label="Steps"></div>
+              <div id="labThickWrap" hidden>Shell · Outer Amount <span class="val" id="labThickV">0,12</span><input type="range" id="labThick" min="0.02" max="0.4" step="0.01" value="0.12" aria-label="Қалыңдық"></div>
+              <div class="two"><label><input type="checkbox" id="labCage" checked> Қаңқа</label><label><input type="checkbox" id="labSpin"> Айналу</label></div>
+              <div class="btns"><button type="button" data-view="persp">Persp</button><button type="button" data-view="top">Top</button><button type="button" data-view="front">Front</button><button type="button" data-view="bottom">Асты</button></div>
+              <div class="stats" id="labStats"></div>
+            </div>
+          </div>
+        </div>
+        <div class="asks"><span class="ask">Steps = 1 болса не болады?</span><span class="ask">Flip Normals қоссақ?</span><span class="ask">Астынан қарасақ ше?</span><span class="ask">Shell қалыңдығы 0,4 болса?</span></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <div class="split even">
+          <div class="stack-col">
+            <p class="eyebrow">Threshold</p>
+            <h2>Бет шықпаудың жиі себебі: жалғанбаған шың</h2>
+            <p class="big">Екі шың алыс болса, ұяда <strong>5 шың</strong> болып қалады да, бет шықпайды. <strong>Threshold</strong> осы шыңдарды біріктіретін қашықтық.</p>
+            <div class="slider"><label for="thrD">A мен B арақашықтығы <output id="thrDo">4</output></label><input type="range" id="thrD" min="0" max="10" step="0.5" value="4"></div>
+            <div class="slider"><label for="thrT">Threshold <output id="thrTo">1</output></label><input type="range" id="thrT" min="0" max="10" step="0.5" value="1"></div>
+            <div class="verdict bad" id="thrVerdict"></div>
+          </div>
+          <svg class="thr-svg" id="thrSvg" viewBox="0 0 560 290" role="img" aria-label="Екі шыңның біріктірілуі"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-phase="2">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Ойын</p><h2>Қатені тап: бет неге дұрыс шықпады?</h2></div><span class="score" id="gameScore">Шешілді: 0 / 3</span></div>
+        <div class="tabs" id="caseTabs" role="tablist"></div>
+        <div class="split even">
+          <div id="caseArt"></div>
+          <div class="stack-col">
+            <h3 id="caseQ"></h3>
+            <div class="opts" id="caseOpts"></div>
+            <div class="explain" id="caseEx" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-phase="3">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Практика · 30 минут</p><h2>Өз бетіңізді жасаңыз</h2></div>
+          <div class="tabs" id="pracTabs" role="tablist"></div></div>
+        <div class="prac">
+          <div class="stack-col"><div class="meter" aria-hidden="true"><i id="pracMeter"></i></div><ul class="todo" id="pracList"></ul></div>
+          <div class="stack-col">
+            <div class="card"><h3 id="pracTitle"></h3><p class="muted" id="pracGoal" style="margin-top:6px"></p></div>
+            <div class="tip" id="pracTip"></div>
+            <div class="card"><h3 id="pracRubT">Бағалау критерийлері</h3><div class="rub" id="pracRub"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-phase="4">
+      <div class="wrap quiz" style="margin-left:auto;margin-right:auto">
+        <p class="eyebrow">Тест · 5 сұрақ</p>
+        <div class="qbar" id="qBar"></div>
+        <div id="quizBody" class="stack-col"></div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-phase="4">
+      <div class="wrap">
+        <p class="eyebrow">Қорытынды</p>
+        <h2>Бүгін не үйрендік</h2>
+        <div class="take" id="take">
+          <div class="rv"><b>Қаңқа</b>Шыңдары бірдей сплайндар, бір нысанға біріктірілген</div>
+          <div class="rv"><b>Ереже</b>Әр ұя 3 немесе 4 шыңнан тұрады</div>
+          <div class="rv"><b>Surface</b>Threshold, Steps, Flip Normals</div>
+          <div class="rv"><b>Shell</b>Бетке қалыңдық береді</div>
+        </div>
+        <div class="r321 rv" id="r321">
+          <div><strong>3</strong><span>Үш нәрсе үйрендім</span></div>
+          <div><strong>2</strong><span>Екі нәрсе қиын болды</span></div>
+          <div><strong>1</strong><span>Бір сұрағым бар</span></div>
+        </div>
+        <div class="card rv"><h3>Үй тапсырмасы</h3><p class="muted" style="margin-top:4px">Қасықты аяқтаңыз немесе өз нысаныңызды Surface-пен жасаңыз: шыны, қайық, жапырақ. Қаңқаның да, бетінің де суретін жіберіңіз.</p></div>
+        <p class="lead" style="margin-top:4px">Назарларыңызға рахмет. Сұрақтар?</p>
+      </div>
+    </section>
+
+    <!--@T--><aside class="notes t-only" id="notes" hidden><h4 id="notesHead">Жазба</h4><p id="notesText"></p></aside><!--@/T-->
+  </main>
+
+  <footer class="nav">
+    <button class="btn ghost" id="prevBtn" aria-label="Алдыңғы слайд">←</button>
+    <div class="dots" id="dots"></div>
+    <span class="count" id="count">1 / 11</span>
+    <button class="btn" id="nextBtn" aria-label="Келесі слайд">→</button>
+  </footer>
+</div>
+
+<div class="menu-scrim" id="menuScrim"></div>
+<nav class="menu" id="menu" aria-label="Мазмұны" aria-hidden="true">
+  <div class="menu-head"><b>Мазмұны</b><button class="pill" id="menuClose" aria-label="Жабу">✕</button></div>
+  <div class="menu-list" id="menuList"></div>
+  <div class="menu-foot">Кез келген слайдқа өту үшін басыңыз. Тікелей сілтеме: <span style="font-family:var(--font-mono)">#s9</span> = практика.</div>
+</nav>
+<!--@INJECT-HTML-->
+
+<script>
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* =====================  3D: жапырақ қаңқасы мен беті  ===================== */
+const NC=5;
+const wid=u=>0.8*Math.pow(Math.sin(Math.PI*u),0.7)*(1-0.2*u);
+const S=(u,v)=>{const w=wid(u);return[(u-0.5)*3.1,v*w,0.38*Math.sin(Math.PI*(0.08+0.84*u))-0.2-0.16*u*u+0.4*v*v*w];};
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const vlen=a=>Math.hypot(a[0],a[1],a[2]);
+const vnorm=a=>{const l=vlen(a);return l>1e-9?[a[0]/l,a[1]/l,a[2]/l]:[0,0,1]};
+const CAGE=(()=>{
+  const long=[],cross=[],verts=[];
+  [-1,0,1].forEach(v=>{const pl=[];for(let k=0;k<=80;k++)pl.push(S(k/80,v));long.push(pl);});
+  for(let j=1;j<NC;j++){const pl=[];for(let k=0;k<=30;k++)pl.push(S(j/NC,-1+2*k/30));cross.push(pl);[-1,0,1].forEach(v=>verts.push(S(j/NC,v)));}
+  verts.push(S(0,0),S(1,0));
+  return{long,cross,verts};
+})();
+const LIGHT=vnorm([-0.45,0.65,-0.62]);
+
+class Viewport{
+  constructor(canvas,opt={}){
+    this.c=canvas;this.ctx=canvas.getContext('2d');
+    this.yaw=opt.yaw??-0.6;this.pitch=opt.pitch??0.6;this.dist=opt.dist??6.4;
+    this.yaw0=this.yaw;this.sway=!!opt.sway;this.spin=!!opt.spin;this.dragged=false;
+    this.p=Object.assign({steps:6,flip:false,two:false,shell:false,thick:0.12,cage:{l:1,c:1,v:1},showCage:true,reveal:1,fade:1},opt.params||{});
+    this.active=false;this.tw=[];this.last=0;this.dpr=1;this.W=0;this.H=0;this.onFrame=null;
+    this.build();this.bind();
+    new ResizeObserver(()=>this.resize()).observe(canvas.parentElement);this.resize();
+  }
+  build(){
+    const st=this.p.steps,U=NC*st,V=2*st,W1=V+1;
+    const P=new Array((U+1)*W1);
+    for(let i=0;i<=U;i++)for(let j=0;j<=V;j++)P[i*W1+j]=S(i/U,-1+2*j/V);
+    const acc=P.map(()=>[0,0,0]);const Q=[];
+    for(let i=0;i<U;i++)for(let j=0;j<V;j++){
+      const a=i*W1+j,b=(i+1)*W1+j,c=(i+1)*W1+j+1,d=i*W1+j+1;
+      const n=crs(sub(P[c],P[a]),sub(P[d],P[b]));const l=vlen(n);if(l<1e-10)continue;
+      Q.push({a,b,c,d,n:[n[0]/l,n[1]/l,n[2]/l],u:(i+0.5)/U});
+      for(const k of [a,b,c,d]){acc[k][0]+=n[0];acc[k][1]+=n[1];acc[k][2]+=n[2];}
+    }
+    this.P=P;this.Q=Q;this.VN=acc.map(vnorm);this.U=U;this.V=V;this.W1=W1;
+    const h=this.p.thick/2;
+    this.PT=P.map((p,k)=>[p[0]+this.VN[k][0]*h,p[1]+this.VN[k][1]*h,p[2]+this.VN[k][2]*h]);
+    this.PB=P.map((p,k)=>[p[0]-this.VN[k][0]*h,p[1]-this.VN[k][1]*h,p[2]-this.VN[k][2]*h]);
+    this.rim=[];
+    for(const j of [0,V]){
+      const dir=j===0?1:-1;
+      for(let i=0;i<U;i++){
+        const a=i*W1+j,b=(i+1)*W1+j;
+        const pts=[this.PT[a],this.PT[b],this.PB[b],this.PB[a]];
+        let n=vnorm(crs(sub(pts[1],pts[0]),sub(pts[3],pts[0])));
+        const hint=sub(P[a],P[a+dir]);
+        if(n[0]*hint[0]+n[1]*hint[1]+n[2]*hint[2]<0)n=[-n[0],-n[1],-n[2]];
+        if(vlen(sub(pts[1],pts[0]))<1e-6)continue;
+        this.rim.push({pts,n,u:(i+0.5)/U});
+      }
+    }
+  }
+  get(k){return k==='yaw'?this.yaw:k==='pitch'?this.pitch:this.p[k];}
+  set(k,v){if(k==='yaw')this.yaw=v;else if(k==='pitch')this.pitch=v;else this.p[k]=v;}
+  tween(key,to,dur){
+    this.tw=this.tw.filter(t=>t.key!==key);
+    if(reduce||dur<=0){this.set(key,to);return;}
+    this.tw.push({key,from:this.get(key),to,start:performance.now(),dur});
+  }
+  bind(){
+    const c=this.c;let sx=0,sy=0;
+    c.addEventListener('pointerdown',e=>{this.drag=true;this.dragged=true;sx=e.clientX;sy=e.clientY;this.tw=this.tw.filter(t=>t.key!=='yaw'&&t.key!=='pitch');try{c.setPointerCapture(e.pointerId)}catch(_){}});
+    c.addEventListener('pointermove',e=>{if(!this.drag)return;this.yaw+=(e.clientX-sx)*0.009;this.pitch=clamp(this.pitch+(e.clientY-sy)*0.009,-1.45,1.45);sx=e.clientX;sy=e.clientY;});
+    const up=()=>{this.drag=false};
+    c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+  }
+  resize(){
+    const r=this.c.parentElement.getBoundingClientRect();if(r.width<2||r.height<2)return;
+    this.dpr=Math.min(window.devicePixelRatio||1,2);this.W=r.width;this.H=r.height;
+    this.c.width=Math.round(r.width*this.dpr);this.c.height=Math.round(r.height*this.dpr);
+  }
+  stats(){
+    const q=this.Q.length;const sh=this.p.shell;
+    return{faces:sh?q*2+this.rim.length:q};
+  }
+  draw(now){
+    if(!this.W)return;
+    const dt=this.last?Math.min(0.1,(now-this.last)/1000):0;this.last=now;
+    for(const t of this.tw){const k=clamp((now-t.start)/t.dur);this.set(t.key,t.from+(t.to-t.from)*ease(k));}
+    this.tw=this.tw.filter(t=>now-t.start<t.dur);
+    if(!reduce&&!this.drag){
+      if(this.spin)this.yaw+=dt*0.55;
+      else if(this.sway&&!this.dragged)this.yaw=this.yaw0+0.55*Math.sin(now/1000*0.45);
+    }
+    const ctx=this.ctx,W=this.W,H=this.H,p=this.p;
+    ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2f373e');g.addColorStop(1,'#1d2328');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+    const cy=Math.cos(this.yaw),sy=Math.sin(this.yaw),cp=Math.cos(this.pitch),sp=Math.sin(this.pitch);
+    const D=this.dist,f=Math.min(W*0.78,H*1.2)*D/3.1,cx=W/2,cyy=H*0.53;
+    const tf=q=>{const x1=q[0]*cy-q[1]*sy,y1=q[0]*sy+q[1]*cy,z1=q[2]-0.05;return[x1,z1*cp+y1*sp,y1*cp-z1*sp+D];};
+    const tn=n=>{const x1=n[0]*cy-n[1]*sy,y1=n[0]*sy+n[1]*cy;return[x1,n[2]*cp+y1*sp,y1*cp-n[2]*sp];};
+    const pr=v=>{const s=f/v[2];return[cx+v[0]*s,cyy-v[1]*s];};
+
+    ctx.globalAlpha=p.fade;
+    // жер торы
+    ctx.lineWidth=1;
+    for(let k=-6;k<=6;k++){
+      const o=k*0.4,strong=k===0;
+      ctx.strokeStyle=strong?'rgba(255,255,255,.2)':'rgba(255,255,255,.075)';
+      let a=pr(tf([o,-2.4,-0.62])),b=pr(tf([o,2.4,-0.62]));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+      a=pr(tf([-2.4,o,-0.62]));b=pr(tf([2.4,o,-0.62]));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+    }
+
+    // бет
+    if(p.reveal>0.002){
+      const faces=[];
+      const ex=p.reveal*1.001;
+      if(!p.shell){
+        const T=this.P.map(tf);const sg=p.flip?-1:1;
+        for(const q of this.Q){
+          if(q.u>ex)continue;
+          const A=T[q.a],B=T[q.b],C=T[q.c],Dd=T[q.d];
+          const n=tn(q.n);const nx=n[0]*sg,ny=n[1]*sg,nz=n[2]*sg;
+          const mx=(A[0]+B[0]+C[0]+Dd[0])/4,my=(A[1]+B[1]+C[1]+Dd[1])/4,mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          const facing=-(nx*mx+ny*my+nz*mz);
+          faces.push({d:mz,pts:[A,B,C,Dd],n:[nx,ny,nz],facing,u:q.u});
+        }
+      }else{
+        const TT=this.PT.map(tf),TB=this.PB.map(tf);
+        for(const q of this.Q){
+          if(q.u>ex)continue;
+          const n=tn(q.n);
+          let A=TT[q.a],B=TT[q.b],C=TT[q.c],Dd=TT[q.d];
+          let mx=(A[0]+B[0]+C[0]+Dd[0])/4,my=(A[1]+B[1]+C[1]+Dd[1])/4,mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          faces.push({d:mz,pts:[A,B,C,Dd],n,facing:-(n[0]*mx+n[1]*my+n[2]*mz),u:q.u,cull:true});
+          A=TB[q.a];B=TB[q.b];C=TB[q.c];Dd=TB[q.d];
+          mx=(A[0]+B[0]+C[0]+Dd[0])/4;my=(A[1]+B[1]+C[1]+Dd[1])/4;mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          const m=[-n[0],-n[1],-n[2]];
+          faces.push({d:mz,pts:[A,B,C,Dd],n:m,facing:-(m[0]*mx+m[1]*my+m[2]*mz),u:q.u,cull:true,under:true});
+        }
+        for(const r of this.rim){
+          if(r.u>ex)continue;
+          const pts=r.pts.map(tf);const n=tn(r.n);
+          const mx=(pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4,my=(pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4,mz=(pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
+          faces.push({d:mz,pts,n,facing:-(n[0]*mx+n[1]*my+n[2]*mz),u:r.u,cull:true,rim:true});
+        }
+      }
+      faces.sort((a,b)=>b.d-a.d);
+      const edge=p.steps<=3;
+      for(const fc of faces){
+        let col;
+        if(fc.facing>0){
+          const sh=0.26+0.74*Math.max(0,fc.n[0]*LIGHT[0]+fc.n[1]*LIGHT[1]+fc.n[2]*LIGHT[2]);
+          col=this.shade(fc.u,sh,fc.under,fc.rim);
+        }else if(fc.cull){continue;}
+        else if(p.two){
+          const sh=0.26+0.74*Math.max(0,-(fc.n[0]*LIGHT[0]+fc.n[1]*LIGHT[1]+fc.n[2]*LIGHT[2]));
+          col=this.shade(fc.u,sh);
+        }else col='rgb(14,17,20)';
+        ctx.beginPath();
+        const q0=pr(fc.pts[0]);ctx.moveTo(q0[0],q0[1]);
+        for(let k=1;k<4;k++){const q=pr(fc.pts[k]);ctx.lineTo(q[0],q[1]);}
+        ctx.closePath();ctx.fillStyle=col;ctx.fill();
+        ctx.lineWidth=edge?1:0.7;ctx.strokeStyle=edge?'rgba(0,0,0,.38)':col;ctx.stroke();
+      }
+    }
+
+    // қаңқа
+    if(p.showCage){
+      const cg=p.cage;const over=p.reveal>0.05;
+      ctx.lineJoin='round';ctx.lineCap='round';
+      ctx.strokeStyle=over?'rgba(255,255,255,.72)':'rgba(236,242,246,.95)';ctx.lineWidth=over?1.3:1.8;
+      const drawLine=(pl,fr)=>{
+        const n=Math.max(1,Math.floor((pl.length-1)*fr));if(fr<=0)return;
+        ctx.beginPath();
+        for(let k=0;k<=n;k++){const q=pr(tf(pl[k]));if(k===0)ctx.moveTo(q[0],q[1]);else ctx.lineTo(q[0],q[1]);}
+        ctx.stroke();
+      };
+      CAGE.long.forEach(pl=>drawLine(pl,cg.l));
+      CAGE.cross.forEach(pl=>drawLine(pl,cg.c));
+      if(cg.v>0){
+        const sz=7*ease(cg.v);
+        for(const v of CAGE.verts){
+          const q=pr(tf(v));ctx.fillStyle='#f2b84b';ctx.fillRect(q[0]-sz/2,q[1]-sz/2,sz,sz);
+          ctx.lineWidth=1;ctx.strokeStyle='#1b2024';ctx.strokeRect(q[0]-sz/2,q[1]-sz/2,sz,sz);
+        }
+      }
+    }
+    ctx.globalAlpha=1;
+
+    // оське үшбұрыш
+    const o=[46,H-40],L=26;
+    [[[1,0,0],'#ff6b6b','X'],[[0,1,0],'#6bdc8b','Y'],[[0,0,1],'#6ba8ff','Z']].forEach(([a,col,t])=>{
+      const n=tn(a);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(o[0]+n[0]*L,o[1]-n[1]*L);ctx.stroke();
+      ctx.fillStyle=col;ctx.font='600 11px '+getComputedStyle(document.body).getPropertyValue('--font-mono');ctx.fillText(t,o[0]+n[0]*(L+8)-3,o[1]-n[1]*(L+8)+4);
+    });
+  }
+  shade(u,sh,under,rim){
+    const t=clamp(u*0.9);
+    let r=36+(150-36)*t,g=168+(206-168)*t,b=122+(92-122)*t;
+    if(under){r*=0.78;g*=0.78;b*=0.9;}
+    if(rim){r=190;g=210;b=150;}
+    return `rgb(${Math.round(r*sh)},${Math.round(g*sh)},${Math.round(b*sh)})`;
+  }
+}
+
+const VPS=[];
+function loop(now){
+  for(const vp of VPS){if(vp.active){if(vp.onFrame)vp.onFrame(vp,now/1000);vp.draw(now);}}
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- 1-слайд: кейіпкер ---------- */
+const hero=new Viewport($('#heroCanvas'),{yaw:-0.7,pitch:0.78,sway:true,params:{two:true,steps:8,reveal:0,cage:{l:0,c:0,v:0}}});
+VPS.push(hero);let heroT0=0;
+hero.onFrame=(vp,t)=>{
+  if(reduce){vp.p.cage={l:1,c:1,v:1};vp.p.reveal=1;vp.p.fade=1;return;}
+  const c=(t-heroT0)%14;
+  vp.p.cage={l:clamp(c/2.2),c:clamp((c-1.6)/1.6),v:clamp((c-2.8)/0.7)};
+  vp.p.reveal=clamp((c-4.4)/2.2);
+  vp.p.fade=c>12?clamp(1-(c-12)/1.8):1;
+};
+
+/* ---------- 3-слайд: сиқыр ---------- */
+const hook=new Viewport($('#hookCanvas'),{yaw:-0.75,pitch:0.74,sway:true,params:{two:true,steps:8,reveal:0}});
+VPS.push(hook);let hookT0=0;
+hook.onFrame=(vp,t)=>{
+  if(reduce){vp.p.cage={l:1,c:1,v:1};return;}
+  const c=t-hookT0;vp.p.cage={l:clamp(c/1.6),c:clamp((c-1.0)/1.2),v:clamp((c-1.9)/0.6)};
+};
+let hookOn=false;
+function hookSet(on,instant){
+  hookOn=on;hook.tween('reveal',on?1:0,instant?0:1700);
+  $('#hookBtn').textContent=on?'Surface өшіру':'Surface қосу';
+  $('#hookNew').classList.toggle('on',on);
+  $('#hookA').style.display=on?'':'none';$('#hookQ').style.display=on?'none':'';
+}
+$('#hookBtn').addEventListener('click',()=>hookSet(!hookOn));
+$('#hookReset').addEventListener('click',()=>{hookSet(false,true);hookT0=performance.now()/1000;hook.dragged=false;hook.yaw=hook.yaw0;});
+
+/* ---------- 4-слайд: ұя ережесі ---------- */
+const cellsSvg=$('#cellsSvg');
+$('#cellsBtn').addEventListener('click',e=>{const on=!cellsSvg.classList.contains('on');cellsSvg.classList.toggle('on',on);e.currentTarget.textContent=on?'Қаңқаға қайту':'Surface қолдану';});
+
+/* ---------- 6-слайд: зертхана ---------- */
+const lab=new Viewport($('#labCanvas'),{yaw:-0.7,pitch:0.7,params:{steps:6,two:false}});
+VPS.push(lab);
+function labStats(){
+  const s=lab.stats();
+  $('#labStats').innerHTML='Шыңдар: <b>14</b><br>Ұялар: <b>10</b> (4 үшбұрыш, 6 төртбұрыш)<br>Беттің полигондары: <b>'+s.faces+'</b>';
+}
+function labRebuild(){lab.p.steps=+$('#labSteps').value;lab.p.thick=+$('#labThick').value;lab.build();labStats();}
+$('#labSteps').addEventListener('input',e=>{$('#labStepsV').textContent=e.target.value;labRebuild();});
+$('#labThick').addEventListener('input',e=>{$('#labThickV').textContent=(+e.target.value).toFixed(2).replace('.',',');labRebuild();});
+$('#labFlip').addEventListener('change',e=>{lab.p.flip=e.target.checked;});
+$('#labTwo').addEventListener('change',e=>{lab.p.two=e.target.checked;});
+$('#labShell').addEventListener('change',e=>{lab.p.shell=e.target.checked;$('#labThickWrap').hidden=!e.target.checked;labStats();});
+$('#labSurf').addEventListener('change',e=>{lab.tween('reveal',e.target.checked?1:0,1300);});
+$('#labCage').addEventListener('change',e=>{lab.p.showCage=e.target.checked;});
+$('#labSpin').addEventListener('change',e=>{lab.spin=e.target.checked;});
+const VIEWS={persp:[-0.7,0.7],top:[0,1.45],front:[0,0.04],bottom:[-0.7,-0.85]};
+$$('[data-view]',$('#labPanel')).forEach(b=>b.addEventListener('click',()=>{const v=VIEWS[b.dataset.view];$('#labSpin').checked=false;lab.spin=false;lab.tween('yaw',v[0],700);lab.tween('pitch',v[1],700);}));
+labStats();
+
+/* ---------- 7-слайд: Threshold ---------- */
+function renderThr(){
+  const d=+$('#thrD').value,th=+$('#thrT').value;
+  $('#thrDo').textContent=d.toString().replace('.',',');$('#thrTo').textContent=th.toString().replace('.',',');
+  const TL=[120,40],TR=[400,40],A=[400,230],BL=[120,230];
+  const welded=d<=th+1e-9;const B=welded?A:[400-d*8,230];
+  const poly=welded?[TL,TR,A,BL]:[TL,TR,A,B,BL];
+  const pts=poly.map(p=>p.join(',')).join(' ');
+  const sq=(p,c)=>`<rect class="vtx" x="${p[0]-8}" y="${p[1]-8}" width="16" height="16"${c?` style="stroke:${c}"`:''}/>`;
+  let s=`<polygon points="${pts}" style="fill:${welded?'var(--accent-soft)':'url(#hatch)'};stroke:var(--fg);stroke-width:2.5"/>`;
+  if(th>0)s+=`<circle cx="${A[0]}" cy="${A[1]}" r="${th*8}" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 5"/>`;
+  if(!welded)s+=`<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" style="stroke:var(--bad);stroke-width:3;stroke-dasharray:4 4"/>`;
+  s+=sq(TL)+sq(TR)+sq(BL)+sq(A,welded?'var(--accent)':null);
+  if(!welded)s+=sq(B,'var(--bad)');
+  s+=`<text x="${A[0]+16}" y="${A[1]+24}">A</text>`;
+  if(!welded)s+=`<text x="${B[0]-6}" y="${B[1]+30}">B</text>`;
+  s+=`<text x="${(TL[0]+TR[0])/2}" y="28" text-anchor="middle" style="fill:var(--muted)">${welded?'4 шың':'5 шың'}</text>`;
+  $('#thrSvg').innerHTML=s;
+  const v=$('#thrVerdict');v.className='verdict '+(welded?'good':'bad');
+  v.textContent=welded?'A мен B бірікті. Ұяда 4 шың, бет бар.':'A мен B бөлек. Ұяда 5 шың, бет жоқ. Threshold-ты арақашықтықтан үлкен ет.';
+}
+$('#thrD').addEventListener('input',renderThr);$('#thrT').addEventListener('input',renderThr);renderThr();
+
+/* ---------- 8-слайд: қатені тап ---------- */
+const CASES=[
+ {tab:'1 · Тесік',q:'Бір ұя тесік болып қалды. Неге?',
+  opts:[['Steps тым аз',0],['Ұяда 5 шың бар: қабырғада артық шың тұр',1],['Flip Normals керек',0]],
+  ok:'Дұрыс. Ұяда 5 шың болса, Surface оны жаппайды. Артық шыңды алып тастасақ, ұя 4 шыңды болады.',
+  hint:'Тесік ұяның шыңдарын санап көріңіз.'},
+ {tab:'2 · Қара бет',q:'Бет бар, бірақ қап-қара. Не істейміз?',
+  opts:[['Threshold-ты 0 етеміз',0],['Сплайндарды өшіреміз',0],['Flip Normals қосамыз',1]],
+  ok:'Дұрыс. Қара түс нормаль кері қараған дегенді білдіреді. Flip Normals бетті бұрады.',
+  hint:'Түс қара: бет бар, бірақ беті кері қараған.'},
+ {tab:'3 · Қырлы бет',q:'Дөңгелек бет қырлы көрінеді. Неге?',
+  opts:[['Shell қосу керек',0],['Steps мәнін арттыру керек',1],['Attach қолдану керек',0]],
+  ok:'Дұрыс. Steps әр ұяны неше бөлікке бөлетінін реттейді. Көп болса бет тегіс болады.',
+  hint:'Қырлар көп емес, аз. Бөліктер санына қараңыз.'}
+];
+let caseI=0;const caseDone=[false,false,false];let c3timer=null;
+function poly(n,cx,cy,r){let s=[];for(let k=0;k<n;k++){const a=-Math.PI/2+2*Math.PI*k/n;s.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}return s.join(' ');}
+function caseArt(i,fixed){
+  if(i===0){
+    const xs=[50,180,310],ys=[40,150,260];let cells='';
+    for(let r=0;r<2;r++)for(let c=0;c<2;c++){
+      const hole=(r===1&&c===1);
+      let pts=[[xs[c],ys[r]],[xs[c+1],ys[r]],[xs[c+1],ys[r+1]]];
+      if(hole)pts.push([245,ys[r+1]]);pts.push([xs[c],ys[r+1]]);
+      const fill=hole&&!fixed?'url(#hatch)':'var(--accent-soft)';
+      cells+=`<polygon class="cell" points="${pts.map(p=>p.join(',')).join(' ')}" style="fill:${fill}"/>`;
+    }
+    let v='';xs.forEach(x=>ys.forEach(y=>{v+=`<rect class="vtx" x="${x-8}" y="${y-8}" width="16" height="16"/>`}));
+    v+=`<rect class="vtx" x="237" y="252" width="16" height="16" style="opacity:${fixed?0:1}"/>`;
+    const ring=fixed?'':'';
+    return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Бір ұясы тесік қаңқа">${cells}${v}${ring}</svg>`;
+  }
+  if(i===1){
+    const fill=fixed?'#35b987':'#0d1013';
+    return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Қара жапырақ"><path d="M50,150 C95,55 245,40 320,150 C245,260 95,245 50,150Z" style="fill:${fill};stroke:var(--fg);stroke-width:2.5;transition:fill .7s"/><path d="M50,150 C140,138 230,138 320,150" style="fill:none;stroke:${fixed?'#d9f5e8':'#3a444d'};stroke-width:2.5"/><text x="180" y="${fixed?96:212}" text-anchor="middle" style="font-family:var(--font-mono);font-size:15px;fill:${fixed?'#0a3d2c':'#7d8a95'}">${fixed?'N ↑ (сыртқа қарайды)':'N ↓ (ішке қарайды)'}</text></svg>`;
+  }
+  const n=fixed?fixed:5;
+  return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Қырлы дөңгелек"><polygon id="c3Poly" points="${poly(n,180,140,105)}" style="fill:var(--accent-soft);stroke:var(--fg);stroke-width:2.5"/><text id="c3Txt" x="180" y="284" text-anchor="middle" style="font-family:var(--font-mono);font-size:16px;fill:var(--fg)">Steps = ${n<=5?1:Math.round((n-5)/3.6)+1}</text></svg>`;
+}
+function renderTabs(){
+  const t=$('#caseTabs');t.innerHTML='';
+  CASES.forEach((c,i)=>{const b=document.createElement('button');b.className='tab'+(caseDone[i]?' done':'');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===caseI);b.textContent=c.tab;b.addEventListener('click',()=>{caseI=i;renderCase();});t.appendChild(b);});
+  $('#gameScore').textContent='Шешілді: '+caseDone.filter(Boolean).length+' / 3';
+}
+function renderCase(){
+  clearInterval(c3timer);
+  //@T
+  TQ.refresh();
+  //@/T
+  const c=CASES[caseI];renderTabs();
+  $('#caseArt').innerHTML=caseArt(caseI,caseDone[caseI]?(caseI===2?48:true):false);
+  $('#caseQ').textContent=c.q;
+  const o=$('#caseOpts');o.innerHTML='';const lt=['А','Ә','Б'];
+  c.opts.forEach((op,k)=>{
+    const b=document.createElement('button');b.type='button';b.className='opt';b.innerHTML=`<i>${lt[k]}</i><span>${op[0]}</span>`;
+    if(caseDone[caseI]){b.disabled=true;if(op[1])b.classList.add('right');}
+    b.addEventListener('click',()=>pick(k,b));o.appendChild(b);
+  });
+  $('#caseEx').textContent=caseDone[caseI]?c.ok:'Жауапты таңдаңыз.';
+}
+function pick(k,btn){
+  const c=CASES[caseI];
+  if(!c.opts[k][1]){btn.classList.remove('wrong');void btn.offsetWidth;btn.classList.add('wrong');$('#caseEx').textContent=c.hint;
+    //@T
+    TQ.answered(false,false);
+    //@/T
+    return;}
+  caseDone[caseI]=true;
+  //@T
+  TQ.answered(true,true);
+  //@/T$$('.opt',$('#caseOpts')).forEach(b=>b.disabled=true);btn.classList.add('right');
+  $('#caseEx').textContent=c.ok;
+  if(caseI===0){setTimeout(()=>{$('#caseArt').innerHTML=caseArt(0,true);},reduce?0:150);}
+  else if(caseI===1){$('#caseArt').innerHTML=caseArt(1,true);}
+  else{
+    let n=5;const poly3=$('#c3Poly'),tx=$('#c3Txt');
+    if(reduce){n=48;poly3.setAttribute('points',poly(n,180,140,105));tx.textContent='Steps = 12';}
+    else c3timer=setInterval(()=>{n=Math.min(48,n+3);poly3.setAttribute('points',poly(n,180,140,105));tx.textContent='Steps = '+(Math.round((n-5)/3.6)+1);if(n>=48)clearInterval(c3timer);},45);
+  }
+  renderTabs();
+}
+
+/* ---------- 9-слайд: практика ---------- */
+const PRAC=[
+ {tab:'1 · Жапырақ',min:18,title:'Жапырақ (негізгі деңгей)',
+  rub:[['Қаңқа: 3 сплайн, шың саны бірдей, қималар шыңдарға жабысқан',8],['Attach: бір нысан, ұштары бір нүктеде',6],['Surface: бет тесіксіз, Threshold пен Steps дұрыс',8],['Flip Normals және Shell: бет қара емес, қалыңдығы бар',5],['Пішін мен тазалық: жапыраққа ұқсайды',3]],
+  goal:'Үш бойлық сплайн мен қималардан бет жасап, оған қалыңдық беріңіз.',
+  tip:'<b>Кеңес:</b> әр сплайнда шың саны бірдей болсын, әйтпесе қималар шыңдарға дәл түспейді.',
+  steps:['Top көрінісінде <em>Create › Shapes › Line</em> арқылы 3 сплайн салыңыз: сол жиек, ортасы, оң жиек. Әр сплайнда шың саны бірдей.',
+         'Біреуін таңдап, <em>Geometry › Attach</em> арқылы қалған екеуін қосыңыз. Енді бір нысан.',
+         'Барлық шыңдарды таңдап, түрін <em>Smooth</em> етіңіз. Ұштарын бір нүктеге әкеліңіз.',
+         '<em>Snaps Toggle</em> (Vertex) қосып, <em>Create Line</em> арқылы көлденең қималарды салыңыз. Әр қима 3 шыңнан өтсін.',
+         'Шыңдарды Perspective-те жылжытып, жапырақты бүгіңіз. Ішкі шыңдарды <em>Bezier</em> етіп, бағыттағыштарды реттеңіз.',
+         '<em>Modifier List › Surface</em>: Threshold 0,1, Steps 15. Қара болса <em>Flip Normals</em>. Соңында <em>Shell</em> қосып қалыңдық беріңіз.']},
+ {tab:'2 · Гүл құмырасы',min:7,title:'Гүл құмырасы (орташа деңгей)',
+  rub:[['Бір жапырақ дайын, айналу центрі (Pick) дұрыс',6],['Array: Instance, 6 дана, Z = 360°, Re-Orient',8],['Көрініс: материал және рендер',4]],
+  goal:'Бір жапырақты Array арқылы көбейтіп, вазаның айналасына орналастырыңыз.',
+  tip:'<b>Кеңес:</b> айналу центрі вазаның ортасында болмаса, жапырақтар сынып кетеді. Алдымен Pick арқылы вазаны таңдаңыз.',
+  steps:['Дайын жапырақты таңдаңыз.',
+         'Айналу центрі үшін координат тізімінен <em>Pick</em> таңдап, вазаны басыңыз. Сосын <em>Use Transform Coordinate Center</em> қосыңыз.',
+         '<em>Tools › Array</em>: Type of Object = <em>Instance</em>, 1D Count = 6, Rotate Totals Z = 360°, <em>Re-Orient</em> қосулы.',
+         'Негізгі жапырақты көшіріп, көтеріп, вазаның айналасында тағы бір рет айналдырыңыз.',
+         'Жасыл материал қосып, құмыраны рендерлеңіз.']},
+ {tab:'3 · Қасық',min:5,title:'Қасық (күрделі деңгей)',
+  rub:[['Контур мен қималар: шың саны, Bezier',5],['Surface: бет тесіксіз, қара емес',4],['Түбі қалыптасқан, екі жағынан тексерілген',3]],
+  goal:'Контур мен қималардан қасықтың бетін жасаңыз және түбін қалыптастырыңыз.',
+  tip:'<b>Кеңес:</b> нәтижені екі жағынан тексеріңіз. Ұя 5 шыңды болса, қасықтың бетінде тесік шығады.',
+  steps:['Жоғарыдан көрініс: қасықтың негізгі контурын <em>Line</em> арқылы салыңыз, шыңдарын Bezier етіңіз.',
+         'Қималар үшін шеңбер немесе эллипс салыңыз. <em>Select and Uniform Scale</em> арқылы Y осі бойынша контурдың жиегіне сәйкестендіріңіз.',
+         'Барлық сплайндарды <em>Attach</em> арқылы бір нысанға қосыңыз.',
+         'Бүйірден қарап, шыңдарды төмен түсіріп қасықтың түбін қалыптастырыңыз.',
+         '<em>Surface</em> қосыңыз: Threshold 0,1, Steps 15. Қара болса <em>Flip Normals</em>.']}
+];
+let pracI=0;const pracChecked=PRAC.map(p=>p.steps.map(()=>false));
+function renderPrac(){
+  const t=$('#pracTabs');t.innerHTML='';
+  PRAC.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===pracI);b.textContent=p.tab;b.addEventListener('click',()=>{pracI=i;renderPrac();});t.appendChild(b);});
+  const p=PRAC[pracI];
+  const tot=p.rub.reduce((a,r)=>a+r[1],0);
+  $('#pracRubT').textContent='Бағалау критерийлері · '+tot+' балл';
+  $('#pracRub').innerHTML=p.rub.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')+`<div class="tot"><span>Барлық тапсырма: 60 балл (30 + 18 + 12)</span><b>${tot}</b></div>`;
+  $('#pracTitle').textContent=p.title+' · ~'+p.min+' мин';$('#pracGoal').textContent=p.goal;$('#pracTip').innerHTML=p.tip;
+  const l=$('#pracList');l.innerHTML='';
+  p.steps.forEach((s,k)=>{
+    const li=document.createElement('li');const lb=document.createElement('label');
+    lb.innerHTML=`<input type="checkbox"${pracChecked[pracI][k]?' checked':''}><span>${s}</span>`;
+    lb.firstChild.addEventListener('change',e=>{pracChecked[pracI][k]=e.target.checked;meter();});
+    li.appendChild(lb);l.appendChild(li);
+  });
+  LIVE.prac(pracI,p);
+  meter();
+}
+function meter(){const a=pracChecked[pracI];$('#pracMeter').style.width=Math.round(100*a.filter(Boolean).length/a.length)+'%';}
+
+/* ---------- 10-слайд: тест ---------- */
+const QUIZ=[
+ {q:'Surface бет тартуы үшін қаңқаның әр ұясында неше шың болуы керек?',o:['Кез келген сан','Тек 4','3 немесе 4','5 немесе одан көп'],a:2,e:'Үш немесе төрт шыңды ұяға бет тартылады. Бес және одан көп шыңды ұя тесік болып қалады.'},
+ {q:'Surface-тен кейін бет қара көрінсе, не істейсіз?',o:['Flip Normals белгісін қоямыз','Сплайндарды өшіреміз','Threshold-ты 100 етеміз','3ds Max-ты қайта ашамыз'],a:0,e:'Қара түс нормаль кері қараған дегенді білдіреді. Flip Normals оны бұрады.'},
+ {q:'Екі шың бір-біріне өте жақын, бірақ біріктірілмеген. Қай параметр көмектеседі?',o:['Steps','Threshold','Shell','Force 2-Sided'],a:1,e:'Threshold шыңдарды біріктіру қашықтығын береді. Ол үлкен болса, жақын шыңдар бір болып есептеледі.'},
+ {q:'Бетке қалыңдық беру үшін қай модификатор қосылады?',o:['Lathe','Shell','Bevel','Noise'],a:1,e:'Shell жұқа бетті қалыңдығы бар көлемді нысанға айналдырады.'},
+ {q:'Steps мәнін 1-ден 12-ге көбейтсек, не өзгереді?',o:['Бет қара болады','Шыңдар саны азаяды','Бет тығыз торлы және тегіс болады','Қалыңдық пайда болады'],a:2,e:'Steps әр ұяның бөліктер санын реттейді. Көп болса бет тегіс, бірақ полигон саны өседі.'}
+];
+let qi=0,qScore=0;const qRes=[];
+function renderQuiz(){
+  const bar=$('#qBar');bar.innerHTML=QUIZ.map((_,i)=>`<i class="${i<qRes.length?(qRes[i]?'on':'bad'):''}"></i>`).join('');
+  const body=$('#quizBody');
+  if(qi>=QUIZ.length){
+    const msg=qScore===5?'Тамаша! Сіз Surface-ті толық меңгердіңіз.':qScore>=3?'Жақсы. Қателескен сұрақтарды практикада тағы бір рет тексеріңіз.':'Қаңқа ережесін мен Flip Normals-ты қайталап шығайық.';
+    LIVE.test(qScore*2);
+    body.innerHTML=`<div class="result"><div class="num">${qScore} / 5</div><p class="big">${msg}</p><div class="row"><button class="btn ghost" id="qAgain">Қайта өту</button></div></div>`;
+    $('#qAgain').addEventListener('click',()=>{qi=0;qScore=0;qRes.length=0;renderQuiz();});return;
+  }
+  const Q=QUIZ[qi];
+  //@T
+  TQ.refresh();
+  //@/T
+  body.innerHTML=`<p class="qtext">${qi+1}. ${Q.q}</p><div class="opts" id="qOpts"></div><div class="explain" id="qEx" aria-live="polite">Жауапты таңдаңыз.</div><div class="row"><button class="btn" id="qNext" hidden>${qi===QUIZ.length-1?'Нәтиже':'Келесі сұрақ'}</button></div>`;
+  const lt=['А','Ә','Б','В'];const box=$('#qOpts');
+  Q.o.forEach((t,k)=>{
+    const b=document.createElement('button');b.type='button';b.className='opt';b.innerHTML=`<i>${lt[k]}</i><span>${t}</span>`;
+    b.addEventListener('click',()=>{
+      const ok=k===Q.a;$$('.opt',box).forEach((x,j)=>{x.disabled=true;if(j===Q.a)x.classList.add('right');});
+      if(!ok)b.classList.add('wrong');
+      qRes[qi]=ok;if(ok)qScore++;
+      $('#qEx').textContent=(ok?'Дұрыс. ':'Қате. ')+Q.e;$('#qNext').hidden=false;$('#qNext').focus();
+      $('#qBar').children[qi].className=ok?'on':'bad';
+      //@T
+      TQ.answered(ok,true);
+      //@/T
+    });
+    box.appendChild(b);
+  });
+  $('#qNext').addEventListener('click',()=>{qi++;renderQuiz();});
+}
+
+/* =====================  Слайд жүйесі  ===================== */
+const slides=$$('.slide');
+const PHASES=[['Кіріспе',4],['Түсіндіру',6],['Қатені тап',4],['Практика',30],['Қорытынды',6]];
+//@T
+const NOTES=[
+ 'Амандасып, тақырыпты атаңыз. Сұраңыз: «Қасық пен жапырақты полигонмен салу қиын, ал сплайнмен қалай?». Анимацияны көрсетіп, назарды аударыңыз (30 секунд).',
+ 'Мақсат үшеу. Уақыт: 4 + 6 + 4 + 30 + 6 минут. Space басқан сайын жолдар бірінен соң бірі шығады. Практикаға 30 минут бар екенін ерекше айтыңыз.',
+ 'Алдымен тек сызықтарды көрсетіңіз және сұраңыз: «Бұған бет қалай тартылады?». 2–3 студенттің жауабын тыңдап, кейін «Surface қосу» батырмасын басыңыз. Көлік корпусы, аяқ киім, ыдыс мысалдарын айтыңыз.',
+ 'Бір ғана ереже: ұяда 3 немесе 4 шың. «Surface қолдану» батырмасын басыңыз: үшбұрыш пен төртбұрыш жабылады, бесбұрыш тесік болып қалады. Сұраңыз: «Бесбұрышты қалай түзетеміз?».',
+ '5 қадам практиканың картасы. Әр қадамның ағылшынша аты жазылған, себебі интерфейс ағылшынша. Space басып, қадамдарды бірте-бірте ашыңыз.',
+ 'Зертхана аудиторияны ең көп тартатын жер. Сұраңыз: «Steps 1 болса не болады?» (қырлы бет). «Flip Normals қоссақ?» (үсті қара). Тінтуірмен астынан айналдырып көрсетіңіз. Shell-ді қосып, қалыңдықты көрсетіңіз.',
+ 'Ұядағы шың саны 5 болып қалатын жиі себеп: жалғанбаған екі шың. Екі жүгірткіні өзгертіп, ұя қашан жабылатынын көрсетіңіз. Қорытынды: Threshold арақашықтықтан үлкен болса, шыңдар бірігеді.',
+ 'Аудиторияға суретті көрсетіп, «қолдарыңызды көтеріңіз: А, Ә немесе Б?» деңіз. Дұрыс жауапты басқанда түзету анимациясы шығады. Үш жағдайға 4 минут.',
+ 'Практика 30 минут: жапырақ 18, құмыра 7, қасық 5. Тапсырманы бітірген студент «Жіберу» басады, шақыру кезегі мұғалімнің тақтасында шығады. Асықпаңыз, тым тез жіберілгенін тақта белгілейді. Бітіргендер 2-деңгейге, одан қасыққа өтеді. Аралап жүріп көмектесіңіз. Жиі қателер: шың саны әртүрлі, ұяда 5 шың, Flip Normals ұмытылған.',
+ 'Бес сұрақ, әрқайсысына 20–30 секунд. Жауап берген соң түсіндірме шығады. Нәтижеге қарап не қайталау керегін байқаңыз.',
+ 'Қорытынды: төрт ой. 2–3 студенттің жұмысын көрсетіңіз. Рефлексия 3-2-1: үш нәрсе үйрендім, екі нәрсе қиын болды, бір сұрағым бар. Үй тапсырмасын айтып, рахмет айтыңыз.'
+];
+//@/T
+const isT=()=>document.documentElement.dataset.role==='teacher';
+const SLIDE_TITLES=['Surface модификаторы','Сабақ мақсаты','Үш сызық әлі бет емес','Қаңқа ережесі: 3–4 шың','Жасаудың 5 қадамы','Зертхана: параметрлер','Threshold','Қатені тап ойыны','Практика және критерийлер','Тест','Қорытынды'];
+const KEYSLIDES=new Set([8,9]);
+let cur=-1;
+const dotsEl=$('#dots');
+slides.forEach((s,i)=>{const d=document.createElement('button');d.className='dot';d.type='button';d.setAttribute('aria-label',(i+1)+'-слайд');d.addEventListener('click',()=>go(i));dotsEl.appendChild(d);});
+
+function stepEls(i){return $$('.rv',slides[i]);}
+function resetSteps(i,all){stepEls(i).forEach(e=>e.classList.toggle('on',all||reduce));slides[i].dataset.shown=all||reduce?stepEls(i).length:0;}
+
+const HOOKS={
+ 0:{enter(){heroT0=performance.now()/1000;hero.active=true;hero.dragged=false;hero.yaw=hero.yaw0;},leave(){hero.active=false;}},
+ 2:{enter(){hookSet(false,true);hookT0=performance.now()/1000;hook.dragged=false;hook.yaw=hook.yaw0;hook.active=true;},leave(){hook.active=false;}},
+ 3:{enter(){cellsSvg.classList.remove('on');$('#cellsBtn').textContent='Surface қолдану';}},
+ 5:{enter(){lab.active=true;lab.resize();},leave(){lab.active=false;}},
+ 6:{enter(){renderThr();}},
+ 7:{enter(){renderCase();}},
+ 8:{enter(){renderPrac();}},
+ 9:{enter(){renderQuiz();}}
+};
+
+function go(i,dir,all){
+  i=clamp(i,0,slides.length-1);if(i===cur)return;
+  const d=dir??(i>cur?1:-1);
+  if(cur>=0){slides[cur].classList.remove('active');slides[cur].classList.toggle('before',d>0);const h=HOOKS[cur];if(h&&h.leave)h.leave();}
+  slides.forEach((s,k)=>{if(k!==i&&k!==cur)s.classList.toggle('before',k<i);});
+  cur=i;const s=slides[i];s.classList.remove('before');s.classList.add('active');s.scrollTop=0;
+  resetSteps(i,d<0||all||!isT());
+  const h=HOOKS[i];if(h&&h.enter)h.enter();
+  //@T
+  TQ.slide(i);
+  //@/T
+  LIVE.slide(i);
+  $$('.dot',dotsEl).forEach((x,k)=>x.classList.toggle('on',k===i));
+  $('#count').textContent=(i+1)+' / '+slides.length;
+  const ph=PHASES[+s.dataset.phase];$('#phase').textContent=ph[0]+' · '+ph[1]+' мин';
+  //@T
+  $('#notesHead').textContent='Жазба · '+(i+1)+'-слайд';$('#notesText').textContent=NOTES[i];
+  //@/T
+  $$('.mi',$('#menuList')).forEach((x,k)=>x.classList.toggle('on',k===i));
+  $('#prevBtn').disabled=i===0;$('#nextBtn').disabled=i===slides.length-1;
+  try{history.replaceState(null,'','#s'+(i+1));}catch(e){}
+  setTimeout(()=>{VPS.forEach(v=>v.resize());},60);
+}
+function next(){
+  const el=stepEls(cur),shown=+slides[cur].dataset.shown||0;
+  if(el.length&&shown<el.length){el[shown].classList.add('on');slides[cur].dataset.shown=shown+1;if(shown===el.length-1&&cur===1)return;return;}
+  go(cur+1,1);
+}
+function prev(){go(cur-1,-1);}
+$('#nextBtn').addEventListener('click',next);$('#prevBtn').addEventListener('click',prev);
+
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('input[type=range],input[type=checkbox]'))t.blur();});
+document.addEventListener('keydown',e=>{
+  const gt=document.getElementById('gate');if(gt&&!gt.hidden)return;
+  //@T
+  if(TQ.modal(e))return;
+  //@/T
+  if(e.key==='Escape'&&menuOpen){closeMenu();return;}
+  const t=e.target;const tag=t&&t.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+  else if((k===' '||k==='Enter')&&tag!=='BUTTON'){e.preventDefault();next();}
+  else if(k==='Home')go(0,-1);
+  else if(k==='End')go(slides.length-1,1);
+  else if(k==='m'||k==='M'||k==='ь'||k==='Ь')toggleMenu();
+  //@T
+  else if(k==='n'||k==='N'||k==='т'||k==='Т')toggleNotes();
+  else if(k==='t'||k==='T'||k==='е'||k==='Е')toggleTimer();
+  else if(k==='g'||k==='G'||k==='п'||k==='П')$('#liveLink').click();
+  else if(k==='w'||k==='W'||k==='ц'||k==='Ц')TQ.toggleWheel();
+  //@/T
+});
+let tx=0,ty=0,tOK=false;
+const stage=$('#stage');
+stage.addEventListener('touchstart',e=>{const t=e.target;tOK=!t.closest('canvas,input,button,.ro,.todo,svg');tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+stage.addEventListener('touchend',e=>{if(!tOK)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6){dx<0?next():prev();}},{passive:true});
+
+/* ---------- мәзір ---------- */
+const menuEl=$('#menu'),scrim=$('#menuScrim');let menuOpen=false;
+$('#menuList').innerHTML=slides.map((s,i)=>{const ph=PHASES[+s.dataset.phase];return `<button type="button" class="mi${KEYSLIDES.has(i)?' key':''}" data-i="${i}"><span class="n">${i+1}</span><span class="t">${SLIDE_TITLES[i]}</span><span class="ph">${ph[0]}</span></button>`;}).join('');
+$('#menuList').addEventListener('click',e=>{const b=e.target.closest('.mi');if(!b)return;closeMenu();go(+b.dataset.i,null,true);});
+function openMenu(){menuOpen=true;menuEl.classList.add('open');scrim.classList.add('open');menuEl.setAttribute('aria-hidden','false');$('#menuBtn').setAttribute('aria-expanded','true');const on=$('.mi.on',menuEl);if(on)on.scrollIntoView({block:'center'});}
+function closeMenu(){menuOpen=false;menuEl.classList.remove('open');scrim.classList.remove('open');menuEl.setAttribute('aria-hidden','true');$('#menuBtn').setAttribute('aria-expanded','false');}
+function toggleMenu(){menuOpen?closeMenu():openMenu();}
+$('#menuBtn').addEventListener('click',toggleMenu);$('#menuClose').addEventListener('click',closeMenu);scrim.addEventListener('click',closeMenu);
+//@S
+$('#toPrac').addEventListener('click',()=>go(8,null,true));
+//@/S
+
+/* ---------- жазбалар, таймер, тақырып ---------- */
+//@T
+function toggleNotes(){if(!isT())return;const n=$('#notes');n.hidden=!n.hidden;$('#notesBtn').setAttribute('aria-pressed',!n.hidden);}
+$('#notesBtn').addEventListener('click',toggleNotes);
+let tLeft=50*60,tRun=false,tLast=0;
+function renderTimer(){
+  const b=$('#timerBtn');const a=Math.abs(Math.round(tLeft));const m=String(Math.floor(a/60)).padStart(2,'0'),s=String(a%60).padStart(2,'0');
+  b.textContent=(tRun?'⏸ ':'▶ ')+(tLeft<0?'+':'')+m+':'+s;b.setAttribute('aria-pressed',tRun);
+  b.classList.toggle('warn',tLeft<300&&tLeft>=60);b.classList.toggle('late',tLeft<60);
+}
+function toggleTimer(){if(!isT())return;tRun=!tRun;tLast=Date.now();renderTimer();}
+$('#timerBtn').addEventListener('click',toggleTimer);
+$('#timerReset').addEventListener('click',()=>{tLeft=50*60;tRun=false;renderTimer();});
+setInterval(()=>{if(!tRun)return;const n=Date.now();tLeft-=(n-tLast)/1000;tLast=n;renderTimer();},250);
+renderTimer();
+//@/T
+
+const root=document.documentElement;
+$('#themeBtn').addEventListener('click',()=>{
+  const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme=dark?'light':'dark';store.set('surface-theme',root.dataset.theme);
+});
+const savedTheme=store.get('surface-theme');if(savedTheme==='light'||savedTheme==='dark')root.dataset.theme=savedTheme;
+
+//@INJECT-JS
+let start=0;const m=/^#s(\d+)$/.exec(location.hash||'');if(m)start=clamp(+m[1]-1,0,slides.length-1);
+go(start,1);
+})();
+</script>

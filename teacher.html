@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Журнал · Мұғалім</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{--bg:#edf1f4;--panel:#fff;--panel2:#f3f6f8;--fg:#0f1b26;--muted:#516476;--line:#d3dce4;--accent:#0a7d5e;--accent-ink:#fff;--accent-soft:#d7f0e7;--warm:#b97800;--warm-soft:#fbefd0;--bad:#c13636;--bad-soft:#fbe1e1;
+ --font-body:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d141b;--panel:#16212b;--panel2:#1b2935;--fg:#e8eff5;--muted:#8ea2b3;--line:#2a3948;--accent:#3fd9a0;--accent-ink:#04211a;--accent-soft:#12382f;--warm:#f2b84b;--warm-soft:#3a2f12;--bad:#ff7b7b;--bad-soft:#40201f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d141b;--panel:#16212b;--panel2:#1b2935;--fg:#e8eff5;--muted:#8ea2b3;--line:#2a3948;--accent:#3fd9a0;--accent-ink:#04211a;--accent-soft:#12382f;--warm:#f2b84b;--warm-soft:#3a2f12;--bad:#ff7b7b;--bad-soft:#40201f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px max(16px,2.4vw);background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}
+.mark{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent) 0 50%,var(--warm) 50% 100%);transform:rotate(45deg) scale(.82)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 12px;font-family:var(--font-mono);font-size:13px;min-height:34px;white-space:nowrap}
+.pill:hover{border-color:var(--accent)}
+.chip{font-family:var(--font-mono);font-size:12.5px;padding:5px 11px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
+.chip.demo{background:var(--warm-soft);border-color:var(--warm);color:var(--warm)}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:10px;padding:10px 18px;min-height:42px}
+.btn:hover{filter:brightness(1.08)}.btn:disabled{opacity:.5}
+.btn.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.btn.bad{background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad)}
+.inp{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;min-height:40px}
+main{padding:clamp(14px,2.4vw,28px) max(16px,2.4vw);display:flex;flex-direction:column;gap:18px;max-width:1500px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:clamp(14px,2vw,22px)}
+h2{margin:0 0 10px;font-size:1.2rem}
+.muted{color:var(--muted)}
+.codecard{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 28px}
+.big{font-family:var(--font-mono);font-weight:700;font-size:clamp(4rem,14vw,9rem);letter-spacing:.12em;line-height:1;color:var(--accent)}
+.big.off{color:var(--muted);font-size:clamp(2rem,6vw,3.2rem);letter-spacing:0}
+.cc-side{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.q{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.qc{border:2px solid var(--warm);background:var(--panel);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.qc h3{margin:0;font-size:1.08rem}
+.qc .meta{display:flex;flex-wrap:wrap;gap:6px}
+.flag{font-family:var(--font-mono);font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2)}
+.flag.over{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.flag.fast{border-color:var(--warm);color:var(--warm);background:var(--warm-soft)}
+.qc label.r{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 7px;border-radius:9px;border:1px solid var(--line);font-size:.95rem}
+.qc label.r input{width:19px;height:19px;accent-color:var(--accent)}
+.qc label.r.stu{border-color:var(--accent)}
+.qc label.r b{font-family:var(--font-mono);color:var(--accent)}
+.qc .score{display:flex;align-items:center;gap:8px}
+.qc .score input{width:84px;text-align:center;font-family:var(--font-mono);font-weight:700}
+.qc .note{display:none}
+.qc.ret .note{display:block}
+.empty{color:var(--muted);padding:6px 2px}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:14px;max-height:62vh}
+table{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);font-size:13px;color:var(--muted);z-index:1}
+td.n,th.n{text-align:center;font-family:var(--font-mono)}
+tr:last-child td{border-bottom:0}
+td .st{font-family:var(--font-mono)}
+.st.call{color:var(--warm);font-weight:700}.st.done{color:var(--accent);font-weight:700}.st.dim{color:var(--muted)}
+td input.part{width:64px;text-align:center;font-family:var(--font-mono);border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:4px;min-height:34px}
+.tot{font-family:var(--font-mono);font-weight:700}
+.g{display:inline-block;min-width:34px;text-align:center;padding:2px 8px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+.g.F{background:var(--bad-soft);color:var(--bad)}
+.x{border:0;background:none;color:var(--muted);padding:2px 8px;border-radius:8px}.x:hover{color:var(--bad)}
+tr.off td{opacity:.5}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--line);margin-right:8px}.dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.rl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}.rl b{min-width:70px}
+.rl .chip button{border:0;background:none;color:var(--muted);padding:0 0 0 6px}
+textarea.inp{resize:vertical;font-family:inherit}
+body:not(.db) #rosterCard,body.db main>section:not(#rosterCard),body.db #projBtn,body.db #csvBtn{display:none!important}
+body.proj #queueCard,body.proj #rosterCard,body.proj .noproj,body.proj th:last-child,body.proj td:last-child{display:none}
+body.proj table{font-size:1.25rem}
+body.proj .tw{max-height:none}
+@media (max-width:640px){.big{letter-spacing:.06em}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="mark" aria-hidden="true"></span><span id="ttl">Журнал</span> · Surface</div>
+  <div class="tools">
+    <span class="chip" id="mode"></span>
+    <a class="pill" id="toSlides" href="index.html">← Слайдтар</a>
+    <button class="pill" id="dbBtn" aria-pressed="false">Студенттер базасы</button>
+    <button class="pill" id="projBtn" aria-pressed="false" title="Тек код пен кестені көрсету">Тақта көрінісі</button>
+    <button class="pill" id="csvBtn">CSV</button>
+    <button class="pill" id="themeBtn" title="Тақырып">◐</button>
+  </div>
+</header>
+
+<main id="app">
+  <section class="card codecard">
+    <div>
+      <div class="muted" id="ccLbl">Сабақ коды</div>
+      <div class="big off" id="code">Сабақ жабық</div>
+    </div>
+    <div class="cc-side">
+      <div class="stats"><span class="chip" id="stIn">Кірді: 0</span><span class="chip" id="stCall">Шақырды: 0</span><span class="chip" id="stDone">Мақұлданды: 0</span></div>
+      <div class="row noproj" id="ccBtns"></div>
+      <div class="muted" id="ccHint" style="font-size:14px"></div>
+    </div>
+  </section>
+
+  <section class="card" id="queueCard">
+    <h2>Шақыру кезегі</h2>
+    <div class="q" id="queue"></div>
+    <div class="empty" id="qEmpty">Әзірге ешкім шақырған жоқ.</div>
+  </section>
+
+  <section class="card" id="rosterCard">
+    <h2>Студенттер базасы</h2>
+    <p class="muted" style="margin:-4px 0 12px">Топ атын жазып, студенттерді әр жолға біреуден қойыңыз. Студент кіргенде осы тізімнен өзін таңдайды.</p>
+    <div class="row"><input class="inp" id="rGroup" placeholder="Топ: КИ-31" style="max-width:150px"><textarea class="inp" id="rNames" rows="3" placeholder="Әр жолға бір студент: Асан Әлиев" style="flex:1;min-width:220px"></textarea><button class="btn" id="rAdd">Қосу</button></div>
+    <div id="rList"></div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Рейтинг</h2>
+      <select class="inp" id="grp" style="width:auto" aria-label="Топ сүзгісі"><option value="">Барлық топтар</option></select>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th class="n">Орын</th><th>Аты-жөні</th><th>Топ</th><th class="n">Жапырақ · 30</th><th class="n">Құмыра · 18</th><th class="n">Қасық · 12</th><th class="n">Тест · 10</th><th class="n">Қатысым · 30</th><th class="n">Жалпы · 100</th><th class="n">Баға</th><th></th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+    <div class="empty" id="tEmpty">Студенттер кіргенде осында шығады.</div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="db.js"></script>
+<script>
+(function(){
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let sess=null,runs=[],offRuns=null,sig='';
+
+/* тақырып */
+try{const t=localStorage.getItem('surface-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
+$('#themeBtn').onclick=()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=d?'light':'dark';try{localStorage.setItem('surface-theme',r.dataset.theme);}catch(e){}};
+
+$('#mode').textContent=DB.mode==='demo'?'DEMO · бір браузер':DB.mode==='server'?'Жергілікті сервер · live':'Firebase · live';
+if(DB.mode==='demo')$('#mode').classList.add('demo');
+$('#projBtn').onclick=e=>{const on=document.body.classList.toggle('proj');e.currentTarget.setAttribute('aria-pressed',on);};
+
+/* сессия */
+const genCode=()=>String(1000+(crypto.getRandomValues(new Uint32Array(1))[0]%9000));
+const newSid=()=>Date.now().toString(36);
+function start(){
+  DB.session.on(s=>{
+    const prev=sess&&sess.sid;sess=s;renderSession();renderRoster();renderAll();
+    if(s&&s.sid!==prev){if(offRuns)offRuns();offRuns=DB.runs.on(s.sid,r=>{runs=r;renderAll();});}
+    if(!s){runs=[];renderAll();}
+  });
+}
+function renderSession(){
+  const open=sess&&sess.open,had=sess&&sess.sid,b=$('#ccBtns');
+  const code=$('#code');
+  if(open){code.textContent=sess.code;code.classList.remove('off');$('#ccLbl').textContent='Сабақ коды · студенттер осыны енгізеді';}
+  else{code.textContent='Сабақ жабық';code.classList.add('off');$('#ccLbl').textContent='Сабақ коды';}
+  b.innerHTML=open
+    ?'<button class="btn ghost" id="bNew">Жаңа код</button><button class="btn bad" id="bEnd">Сабақты аяқтау</button>'
+    :'<button class="btn" id="bStart">'+(had?'Жаңа сабақты бастау':'Сабақты бастау')+'</button>'+(had?'<button class="btn ghost" id="bOpen">Қайта ашу</button>':'');
+  $('#ccHint').textContent=open?'Жаңа код тек жаңадан кіретіндерге қажет. Кіріп отырғандар үзілмейді.':(had?'Сабақ аяқталды. Деректер сақталған.':'Бастағанда 4 таңбалы код пайда болады.');
+}
+$('#ccBtns').addEventListener('click',e=>{
+  const id=e.target.id;
+  if(id==='bStart')DB.session.set({sid:newSid(),code:genCode(),open:true,startedAt:Date.now()});
+  else if(id==='bNew')DB.session.set({code:genCode()});
+  else if(id==='bEnd')DB.session.set({open:false});
+  else if(id==='bOpen')DB.session.set({open:true});
+});
+
+/* тізім */
+const roster=()=>Array.isArray(sess&&sess.roster)?sess.roster:[];
+const setRoster=l=>DB.session.set({roster:l});
+$('#rAdd').onclick=()=>{
+  const g=$('#rGroup').value.trim().replace(/\s+/g,' '),cur=roster().slice();
+  const names=$('#rNames').value.split('\n').map(x=>x.trim().replace(/\s+/g,' ')).filter(Boolean);
+  if(!g||!names.length)return;
+  names.forEach(n=>{if(!cur.some(x=>x.g===g&&x.n===n))cur.push({g,n});});
+  setRoster(cur);$('#rNames').value='';
+};
+function renderRoster(){
+  const by={};roster().forEach(x=>(by[x.g]=by[x.g]||[]).push(x.n));
+  $('#rList').innerHTML=Object.keys(by).sort().map(g=>`<div class="rl"><b>${esc(g)}</b>${by[g].map(n=>`<span class="chip">${esc(n)}<button data-g="${esc(g)}" data-n="${esc(n)}" title="Өшіру">✕</button></span>`).join('')}<button class="pill" data-gdel="${esc(g)}">Топты өшіру</button></div>`).join('')||'<div class="empty">Топ пен студенттерді енгізіңіз: студент кіргенде тізімнен өзін таңдайды.</div>';
+}
+$('#rList').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.gdel!==undefined){if(confirm('«'+b.dataset.gdel+'» тобын өшіру?'))setRoster(roster().filter(x=>x.g!==b.dataset.gdel));}
+  else if(b.dataset.g!==undefined)setRoster(roster().filter(x=>!(x.g===b.dataset.g&&x.n===b.dataset.n)));
+});
+function allRows(){
+  const by={};runs.forEach(r=>{by[r.key||APP.key(r.group,r.name)]=r;});
+  const out=roster().map(x=>{const k=APP.key(x.g,x.n),r=by[k];delete by[k];
+    return Object.assign({id:sess&&sess.sid?sess.sid+'_'+k:'',key:k,name:x.n,group:x.g},r||{},{on:!!(r&&r.joinedAt)});});
+  Object.keys(by).forEach(k=>out.push(Object.assign({},by[k],{on:!!by[k].joinedAt})));
+  return out;
+}
+
+/* деректер */
+const T=APP.TASKS;
+const tOf=(r,n)=>r['t'+n]||{};
+const part=r=>Math.min(APP.PART_MAX,Math.max(0,+r.part||0));
+const total=r=>APP.total(r);
+function renderAll(){renderStats();renderQueue();renderTable();}
+function renderStats(){
+  let call=0,done=0;
+  runs.forEach(r=>{for(let n=0;n<3;n++){const s=tOf(r,n).st;if(s==='called')call++;if(s==='done')done++;}});
+  $('#stIn').textContent='Кірді: '+runs.length;$('#stCall').textContent='Шақырды: '+call;$('#stDone').textContent='Мақұлданды: '+done;
+}
+function calls(){
+  const out=[];
+  runs.forEach(r=>{for(let n=0;n<3;n++){const t=tOf(r,n);if(t.st==='called')out.push({r,n,t});}});
+  return out.sort((a,b)=>a.t.at-b.t.at);
+}
+function renderQueue(){
+  const list=calls(),s=list.map(x=>x.r.id+':'+x.n+':'+x.t.at).join('|');
+  $('#qEmpty').hidden=list.length>0;
+  if(s===sig)return;sig=s;
+  $('#queue').innerHTML=list.map(({r,n,t})=>{
+    const task=T[n],el=+t.el||0;
+    const over=el>task.budget,fast=el<task.budget*APP.FAST_RATIO;
+    const rows=task.rub.map((c,k)=>`<label class="r${t.c&&t.c[k]?' stu':''}"><input type="checkbox" data-k="${k}"${t.c&&t.c[k]?' checked':''}><span>${esc(c[0])}</span><b>${c[1]}</b></label>`).join('');
+    const auto=task.rub.reduce((a,c,k)=>a+(t.c&&t.c[k]?c[1]:0),0);
+    return `<article class="qc" data-id="${esc(r.id)}" data-n="${n}">
+      <h3>${esc(r.name)} <span class="muted">· ${esc(r.group)}</span></h3>
+      <div class="meta"><span class="flag">${task.name} · ${task.max} балл</span><span class="flag${over?' over':fast?' fast':''}">⏱ ${el} мин (норма ${task.budget})</span>${fast?'<span class="flag fast">⚡ тым тез</span>':''}${over?'<span class="flag over">уақыттан асты</span>':''}</div>
+      <div class="muted" style="font-size:13px">Студент белгілегендері көгілдір жиекпен. Өзіңіз тексеріп түзетіңіз.</div>
+      ${rows}
+      <div class="score"><span>Мұғалім тексеруі:</span><input class="inp pct" type="number" min="0" max="100" step="5" value="100"><span class="muted">%</span></div>
+      <div class="score"><span>Балл:</span><input class="inp sc" type="number" min="0" max="${task.max}" step="0.5" value="${auto}" data-auto="1"><span class="muted">/ ${task.max}</span></div>
+      <input class="inp note" placeholder="Түсініктеме (қайтарғанда студентке көрінеді)">
+      <div class="row"><button class="btn" data-a="ok">Мақұлдау</button><button class="btn ghost" data-a="ret">Қайтару</button></div>
+    </article>`;
+  }).join('');
+}
+function recalc(card){
+  const n=+card.dataset.n;let s=0;card.querySelectorAll('input[data-k]').forEach(i=>{if(i.checked)s+=T[n].rub[+i.dataset.k][1];});
+  const p=Math.min(100,Math.max(0,+card.querySelector('.pct').value||0));
+  card.querySelector('.sc').value=+(s*p/100).toFixed(1);
+}
+$('#queue').addEventListener('change',e=>{
+  const c=e.target.closest('input[data-k]');if(!c)return;
+  const card=c.closest('.qc');
+  if(card.querySelector('.sc').dataset.auto==='1')recalc(card);
+});
+$('#queue').addEventListener('input',e=>{
+  if(e.target.classList.contains('sc'))e.target.dataset.auto='0';
+  else if(e.target.classList.contains('pct')){const c=e.target.closest('.qc');c.querySelector('.sc').dataset.auto='1';recalc(c);}
+});
+$('#queue').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-a]');if(!b)return;
+  const card=b.closest('.qc'),id=card.dataset.id,n=+card.dataset.n;
+  if(b.dataset.a==='ok'){
+    const app=[...card.querySelectorAll('input[data-k]')].map(i=>i.checked);
+    const sc=Math.min(T[n].max,Math.max(0,+card.querySelector('.sc').value||0));
+    const pct=Math.min(100,Math.max(0,+card.querySelector('.pct').value||0));
+    DB.run.patch(id,{['t'+n]:{st:'done',app,score:sc,pct,note:''}});
+  }else{
+    if(!card.classList.contains('ret')){card.classList.add('ret');card.querySelector('.note').focus();b.textContent='Қайтаруды растау';return;}
+    DB.run.patch(id,{['t'+n]:{st:'working',note:card.querySelector('.note').value.trim()||'Қайта тексеріп, түзетіңіз.'}});
+  }
+});
+
+const num=(v,max,val)=>`<input class="part" type="number" min="0" max="${max}" step="0.5" value="${val==null?'':val}" ${v}>`;
+function renderTable(){
+  const f=$('#grp'),all=allRows(),groups=[...new Set(all.map(r=>r.group))].sort();
+  const cur=f.value;
+  f.innerHTML='<option value="">Барлық топтар</option>'+groups.map(g=>`<option${g===cur?' selected':''}>${esc(g)}</option>`).join('');
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#tb'))return;
+  const rows=all.filter(r=>!f.value||r.group===f.value).sort((a,b)=>total(b)-total(a)||a.name.localeCompare(b.name,'kk'));
+  $('#tEmpty').hidden=rows.length>0;
+  $('#tb').innerHTML=rows.map((r,i)=>{
+    const tt=total(r),g=APP.grade(tt);
+    const tk=n=>{const t=tOf(r,n);return (t.st==='called'?'<span class="st call" title="шақырды">⏳</span>':'')+num('data-n="'+n+'"',T[n].max,t.st==='done'?t.score:null);};
+    return `<tr class="${r.on?'on':'off'}" data-id="${esc(r.id)}" data-key="${esc(r.key||'')}" data-name="${esc(r.name)}" data-group="${esc(r.group)}"><td class="n">${i+1}</td><td><span class="dot${r.on?' on':''}"></span>${esc(r.name)}</td><td>${esc(r.group)}</td><td class="n">${tk(0)}</td><td class="n">${tk(1)}</td><td class="n">${tk(2)}</td>
+    <td class="n">${num('data-f="test"',APP.TEST_MAX,r.test)}</td>
+    <td class="n">${num('data-f="part"',APP.PART_MAX,r.part)}</td>
+    <td class="n tot">${tt}</td><td class="n"><span class="g${g==='F'?' F':''}">${g}</span></td><td><button class="x" data-del title="Нәтижесін тазалау" aria-label="Тазалау">✕</button></td></tr>`;
+  }).join('');
+}
+$('#grp').onchange=renderTable;
+$('#tb').addEventListener('change',e=>{
+  const i=e.target;if(!i.classList.contains('part'))return;
+  const tr=i.closest('tr');
+  if(!tr.dataset.id||!sess||!sess.sid){alert('Алдымен «Сабақты бастау» басыңыз.');renderTable();return;}
+  const base={sid:sess.sid,name:tr.dataset.name,group:tr.dataset.group,key:tr.dataset.key};
+  const mx=+i.max,v=i.value===''?null:Math.min(mx,Math.max(0,+i.value));
+  i.blur();
+  if(i.dataset.n!==undefined)DB.run.patch(tr.dataset.id,Object.assign(base,{['t'+i.dataset.n]:v==null?{st:'working'}:{st:'done',score:v,pct:100}}));
+  else DB.run.patch(tr.dataset.id,Object.assign(base,{[i.dataset.f]:v}));
+});
+$('#tb').addEventListener('click',e=>{
+  const b=e.target.closest('[data-del]');if(!b)return;
+  if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Тазалау?';setTimeout(()=>{b.dataset.sure='';b.textContent='✕';},2500);return;}
+  const id=b.closest('tr').dataset.id;if(id)DB.run.del(id);
+});
+
+/* CSV */
+$('#csvBtn').onclick=()=>{
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=[['Аты-жөні','Топ','Жапырақ','Құмыра','Қасық','Тапсырма · 60','Тест · 10','Қатысым · 30','Жалпы · 100','Баға']];
+  allRows().sort((a,b)=>total(b)-total(a)).forEach(r=>{
+    const s=n=>tOf(r,n).st==='done'?tOf(r,n).score:'';
+    rows.push([r.name,r.group,s(0),s(1),s(2),APP.sum(r),APP.test(r),part(r),total(r),APP.grade(total(r))]);
+  });
+  const txt='﻿'+rows.map(r=>r.map(q).join(';')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
+  a.download='ballar-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+};
+
+$('#dbBtn').onclick=e=>{const on=document.body.classList.toggle('db');e.currentTarget.setAttribute('aria-pressed',on);e.currentTarget.textContent=on?'← Журнал':'Студенттер базасы';$('#ttl').textContent=on?'Студенттер базасы':'Журнал';};
+if(/embed/.test(location.search))$('#toSlides').hidden=true;
+start();
+})();
+</script>
+</body>
+</html>

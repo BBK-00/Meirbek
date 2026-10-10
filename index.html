@@ -1,0 +1,2171 @@
+<!doctype html><html lang="kk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>3D-модельдеу және CAD-жүйелер · Surface</title><script src="config.js"></script><script src="common.js"></script><script src="db.js"></script></head><body>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* Концепция: 3ds Max көрінісінің (viewport) тілі. Тақта салқын көкшіл-сұр, бет жасыл, шыңдар сары. */
+:root{
+  --bg:#edf1f4; --panel:#ffffff; --panel2:#f3f6f8; --fg:#0f1b26; --muted:#516476; --line:#d3dce4;
+  --accent:#0a7d5e; --accent-ink:#ffffff; --accent-soft:#d7f0e7;
+  --warm:#b97800; --warm-soft:#fbefd0; --bad:#c13636; --bad-soft:#fbe1e1;
+  --font-body:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d141b; --panel:#16212b; --panel2:#1b2935; --fg:#e8eff5; --muted:#8ea2b3; --line:#2a3948;
+    --accent:#3fd9a0; --accent-ink:#04211a; --accent-soft:#12382f;
+    --warm:#f2b84b; --warm-soft:#3a2f12; --bad:#ff7b7b; --bad-soft:#40201f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d141b; --panel:#16212b; --panel2:#1b2935; --fg:#e8eff5; --muted:#8ea2b3; --line:#2a3948;
+  --accent:#3fd9a0; --accent-ink:#04211a; --accent-soft:#12382f;
+  --warm:#f2b84b; --warm-soft:#3a2f12; --bad:#ff7b7b; --bad-soft:#40201f; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+kbd{font-family:var(--font-mono);font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;background:var(--panel)}
+
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+
+/* ---------- жоғарғы жол ---------- */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:10px max(16px,2.4vw);border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{width:22px;height:22px;flex:none;border-radius:6px;background:linear-gradient(135deg,var(--accent) 0 50%,var(--warm) 50% 100%);transform:rotate(45deg) scale(.82)}
+.brand b{font-weight:800;letter-spacing:-.01em}
+.brand .sub{color:var(--muted);font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.phase{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding:5px 10px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 12px;font-family:var(--font-mono);font-size:13px;min-height:34px;white-space:nowrap}
+.pill:hover{border-color:var(--accent)}
+.pill[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.pill.warn{color:var(--warm);border-color:var(--warm)}
+.pill.late{color:var(--bad);border-color:var(--bad)}
+
+/* ---------- слайдтар ---------- */
+.stage{position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:clamp(12px,2.2vw,34px) max(16px,3vw);opacity:0;visibility:hidden;transform:translateX(28px);transition:opacity .35s ease,transform .35s ease,visibility 0s .35s}
+.slide.before{transform:translateX(-28px)}
+.slide.active{opacity:1;visibility:visible;transform:none;transition-delay:0s}
+.wrap{max-width:1280px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:clamp(12px,2vh,22px)}
+.eyebrow{margin:0;font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{margin:0;font-size:clamp(2.3rem,6vw,4.6rem);line-height:1;font-weight:800;letter-spacing:-.03em;text-wrap:balance}
+h2{margin:0;font-size:clamp(1.6rem,3.4vw,2.7rem);line-height:1.08;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+h3{margin:0;font-size:1.1rem;font-weight:700}
+p{margin:0}
+.lead{font-size:clamp(1.1rem,2vw,1.55rem);line-height:1.4;color:var(--muted);max-width:34em}
+.lead strong,.big strong{color:var(--fg);font-weight:600}
+.big{font-size:clamp(1.05rem,1.6vw,1.3rem);max-width:36em}
+.muted{color:var(--muted)}
+.hint{font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--font-mono);font-size:12.5px;padding:5px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(16px,3vw,44px);align-items:center}
+.split.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stack-col{display:flex;flex-direction:column;gap:clamp(10px,1.6vh,18px);min-width:0}
+@media (max-width:860px){.split,.split.even{grid-template-columns:minmax(0,1fr)}}
+
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:10px;padding:11px 18px;min-height:44px;transition:transform .15s,filter .15s}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+
+.rv{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s ease}
+.rv.on{opacity:1;transform:none}
+
+/* ---------- viewport ---------- */
+.vp{position:relative;border-radius:14px;overflow:hidden;background:#242b32;border:1px solid #3a444d;height:clamp(280px,54vh,580px);min-width:0}
+.vp canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.vp canvas:active{cursor:grabbing}
+.vp-label{position:absolute;left:12px;top:9px;font-family:var(--font-mono);font-size:11.5px;color:#a9b6c1;pointer-events:none}
+.vp-hint{position:absolute;right:12px;bottom:9px;font-family:var(--font-mono);font-size:11.5px;color:#8c99a4;pointer-events:none}
+.vp-stack{position:absolute;right:12px;top:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;font-family:var(--font-mono);font-size:12px;pointer-events:none}
+.vp-stack span{padding:3px 9px;border-radius:5px;background:#2f373f;color:#c8d2da;border:1px solid #444f59;transition:all .4s}
+.vp-stack span.new{background:#1b4a3c;border-color:#3fd9a0;color:#d6fff0;opacity:0;transform:translateY(6px)}
+.vp-stack span.new.on{opacity:1;transform:none}
+
+/* ---------- слайд 2 ---------- */
+.goal-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:g}
+.goal-list li{counter-increment:g;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;font-size:clamp(1.02rem,1.5vw,1.25rem)}
+.goal-list li::before{content:counter(g);display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-family:var(--font-mono);font-weight:600}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tl-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.tl-min{font-family:var(--font-mono);font-weight:600;font-size:15px}
+.tl-t{font-weight:600}
+.tl-d{font-size:14px;color:var(--muted)}
+.tl-bar{height:6px;border-radius:3px;background:var(--panel2);margin-top:6px;overflow:hidden}
+.tl-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .9s .2s cubic-bezier(.2,.8,.2,1)}
+.tl-row.on .tl-bar i{width:var(--w)}
+
+/* ---------- слайд 4 ---------- */
+.cells-svg{width:100%;height:auto;max-height:46vh;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.cells-svg .cell{fill:transparent;stroke:var(--fg);stroke-width:2.5;transition:fill .6s}
+.cells-svg.on .cell.ok{fill:var(--accent-soft)}
+.cells-svg.on .cell.bad{fill:url(#hatch)}
+.cells-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2}
+.cells-svg text{font-family:var(--font-mono);font-size:17px;fill:var(--fg)}
+.cells-svg .tag{font-weight:600}
+.cells-svg .tag.ok{fill:var(--accent)}
+.cells-svg .tag.bad{fill:var(--bad)}
+
+/* ---------- слайд 5 ---------- */
+.steps5{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;counter-reset:s}
+.step5{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.step5::before{content:counter(s);width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;font-family:var(--font-mono)}
+.step5 h3{font-size:1.12rem}
+.step5 p{font-size:14.5px;color:var(--muted)}
+.code{font-family:var(--font-mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:4px 8px;color:var(--fg);align-self:flex-start}
+
+/* ---------- лаборатория ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+.ro{background:#2b3238;color:#d6dee5;border:1px solid #3d4750;border-radius:10px;font-family:var(--font-mono);font-size:12.5px;overflow:hidden}
+.ro-head{background:#39424b;padding:6px 10px;font-weight:600;letter-spacing:.04em;color:#eef3f7}
+.ro-body{padding:10px;display:flex;flex-direction:column;gap:7px}
+.ro label{display:flex;align-items:center;gap:7px;min-height:24px;cursor:pointer}
+.ro input[type=checkbox]{width:16px;height:16px;accent-color:#3fd9a0}
+.ro input[type=range]{width:100%;accent-color:#3fd9a0}
+.ro .val{margin-left:auto;color:#f2b84b;min-width:34px;text-align:right}
+.ro .sep{height:1px;background:#3d4750}
+.ro .line{display:flex;align-items:center;gap:8px}
+.ro .dim{color:#8e9ba6}
+.ro .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ro .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ro .btns button{background:#3a444d;border:1px solid #4a5560;color:#e5ecf1;border-radius:6px;padding:6px 2px;font-family:var(--font-mono);font-size:12px;min-height:32px}
+.ro .btns button:hover{border-color:#3fd9a0}
+.stats{color:#aeb9c3;line-height:1.55}
+.stats b{color:#fff;font-weight:600}
+.asks{display:flex;flex-wrap:wrap;gap:8px}
+.ask{font-size:14px;padding:7px 12px;border-radius:10px;background:var(--panel);border:1px dashed var(--accent);color:var(--fg)}
+
+/* ---------- Threshold ---------- */
+.thr-svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.thr-svg text{font-family:var(--font-mono);font-size:15px;fill:var(--fg)}
+.thr-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2}
+.slider{display:flex;flex-direction:column;gap:4px}
+.slider label{display:flex;justify-content:space-between;font-weight:600}
+.slider output{font-family:var(--font-mono);color:var(--accent)}
+.slider input{width:100%;accent-color:var(--accent)}
+.verdict{padding:12px 14px;border-radius:12px;font-weight:600;border:1px solid var(--line);background:var(--panel)}
+.verdict.good{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.verdict.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* ---------- қатені тап ---------- */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;min-height:40px}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab.done::after{content:" ✓"}
+.case-svg{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;max-height:52vh}
+.case-svg .cell{stroke:var(--fg);stroke-width:2.5;transition:fill .7s}
+.case-svg .vtx{fill:var(--warm);stroke:var(--panel);stroke-width:2;transition:opacity .6s}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;font-size:1.02rem;min-height:52px}
+.opt i{font-style:normal;display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:var(--panel2);font-family:var(--font-mono);font-weight:600}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{background:var(--accent-soft);border-color:var(--accent)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.explain{min-height:3.2em;padding:12px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:.98rem}
+.score{font-family:var(--font-mono);color:var(--muted)}
+
+/* ---------- практика ---------- */
+.t-only#gbBtn,.t-only#bdBtn{display:none!important}
+#wheelbox .wh-btns,#wheelbox .wh-note{display:none}
+.prac{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.prac{grid-template-columns:minmax(0,1fr)}}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.todo label{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);cursor:pointer}
+.todo input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.todo label:has(input:checked){background:var(--accent-soft);border-color:var(--accent)}
+.todo label:has(input:checked) span{opacity:.72}
+.todo em{font-style:normal;font-family:var(--font-mono);font-size:.86em;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+.meter{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s}
+.tip{padding:12px 14px;border-radius:12px;background:var(--warm-soft);border:1px solid var(--warm);font-size:.95rem}
+.tip b{color:var(--warm)}
+
+/* ---------- тест ---------- */
+.quiz{max-width:860px}
+.qbar{display:flex;gap:6px}
+.qbar i{flex:1;height:6px;border-radius:3px;background:var(--panel2);transition:background .3s}
+.qbar i.on{background:var(--accent)}
+.qbar i.bad{background:var(--bad)}
+.qtext{font-size:clamp(1.25rem,2.4vw,1.8rem);font-weight:700;line-height:1.25;text-wrap:balance}
+.result{display:flex;flex-direction:column;gap:10px}
+.result .num{font-size:clamp(3rem,9vw,6rem);font-weight:800;letter-spacing:-.04em;color:var(--accent);line-height:1}
+
+/* ---------- қорытынды ---------- */
+.take{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.take div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.take b{display:block;font-family:var(--font-mono);font-size:13px;color:var(--accent);margin-bottom:4px;font-weight:600}
+.r321{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.r321{grid-template-columns:minmax(0,1fr)}}
+.r321 div{border:1px dashed var(--accent);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.r321 strong{font-size:2.2rem;font-weight:800;color:var(--accent);font-family:var(--font-mono);line-height:1}
+
+/* ---------- жазбалар ---------- */
+.notes{position:absolute;left:max(12px,2vw);right:max(12px,2vw);bottom:8px;z-index:5;background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(0,0,0,.28);max-height:44%;overflow:auto}
+.notes h4{margin:0 0 6px;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes p{font-size:.98rem}
+
+/* ---------- төменгі навигация ---------- */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px max(16px,2.4vw);border-top:1px solid var(--line);background:var(--panel)}
+.nav .btn{min-width:46px;padding:8px 14px}
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;flex:1}
+.dot{width:12px;height:12px;border-radius:50%;border:0;background:var(--line);padding:0;position:relative}
+.dot::after{content:"";position:absolute;inset:-8px}
+.dot.on{background:var(--accent);transform:scale(1.35)}
+.count{font-family:var(--font-mono);font-size:13px;color:var(--muted);min-width:54px;text-align:center}
+
+/* ---------- мазмұн мәзірі ---------- */
+.menu{position:fixed;left:0;top:0;bottom:0;width:min(390px,92vw);z-index:60;background:var(--panel);border-right:1px solid var(--line);box-shadow:12px 0 40px rgba(0,0,0,.25);display:flex;flex-direction:column;transform:translateX(-102%);visibility:hidden;transition:transform .28s ease,visibility 0s .28s}
+.menu.open{transform:none;visibility:visible;transition-delay:0s}
+.menu-scrim{position:fixed;inset:0;z-index:55;background:rgba(8,14,20,.45);opacity:0;pointer-events:none;transition:opacity .25s}
+.menu-scrim.open{opacity:1;pointer-events:auto}
+.menu-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.menu-head b{font-size:1.1rem}
+.menu-list{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+.mi{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);min-height:50px}
+.mi:hover{border-color:var(--accent)}
+.mi.on{background:var(--accent-soft);border-color:var(--accent)}
+.mi .n{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--panel);font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+.mi .t{font-weight:600;line-height:1.2}
+.mi .ph{font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.mi.key{border-color:var(--warm)}
+.menu-foot{padding:10px 16px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.rub{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.rub div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:.93rem;align-items:start;line-height:1.35}
+.rub b{font-family:var(--font-mono);color:var(--accent);white-space:nowrap}
+.rub .tot{border-top:1px dashed var(--line);padding-top:7px;font-weight:600}
+@media (max-width:560px){.brand .sub{display:none}.top{gap:8px 10px}.pill{padding:5px 10px}}
+/* ================= ОҚЫТУШЫ: журнал, кесте, дөңгелек ================= */
+.inp{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;min-height:42px;color:var(--fg)}
+.inp:focus{outline:3px solid var(--accent);outline-offset:1px}
+.inp.sm{width:90px;text-align:center}
+textarea.inp{resize:vertical;font-family:var(--font-body)}
+.mini{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:4px 9px;font-size:12.5px;min-height:30px}
+.mini:hover{border-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:78px;transform:translate(-50%,12px);z-index:90;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.ovl{position:fixed;inset:0;z-index:50;background:rgba(8,14,20,.55);backdrop-filter:blur(3px);display:grid;place-items:center;padding:2.2vh 2vw}
+.ovl[hidden],.ovl.board[hidden]{display:none}
+.gb-card{width:min(1240px,100%);max-height:100%;background:var(--bg);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.gb-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 8px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.gb-head h2{font-size:1.3rem;margin-right:4px}
+.gb-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.gb-head .inp{width:130px;min-height:36px;padding:5px 10px}
+.gb-head .tab{padding:6px 12px;min-height:36px}
+.gb-head .pill{white-space:nowrap}
+.gb-sp{flex:1}
+.gb-body{padding:16px;overflow:auto;min-height:0}
+.reg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px;align-items:start}
+@media (max-width:900px){.reg{grid-template-columns:minmax(0,1fr)}}
+.schips{display:flex;flex-wrap:wrap;gap:8px}
+.sc{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:999px;padding:6px 8px 6px 14px;font-weight:600;min-height:40px}
+.sc:hover{border-color:var(--accent)}
+.sc.here{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.sc.here::before{content:"✓";color:var(--accent);font-weight:800;margin-right:-2px}
+.sc i{font-style:normal;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--panel);color:var(--muted);font-size:14px}
+.sc i:hover{background:var(--bad-soft);color:var(--bad)}
+.sc i.arm{background:var(--bad);color:#fff;width:auto;padding:0 8px;border-radius:12px;font-size:12px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.pc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.pc-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pc-name{font-weight:600;line-height:1.2}
+.pc-pts{font-family:var(--font-mono);color:var(--muted);white-space:nowrap}
+.pc-pts b{color:var(--accent);font-size:1.15em}
+.pc-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.pc-btns button{border:1px solid var(--line);background:var(--panel2);border-radius:8px;min-height:36px;font-family:var(--font-mono);font-weight:600}
+.pc-btns button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:8px 14px;font-weight:600;min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.gt{width:100%;border-collapse:separate;border-spacing:0;background:var(--panel);font-size:14px}
+.gt th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:8px 8px;font-weight:600;vertical-align:bottom;border-bottom:1px solid var(--line);z-index:1}
+.gt th b{display:block;font-family:var(--font-mono);color:var(--accent);font-weight:600}
+.gt th .th-l{display:block;font-size:12px;line-height:1.2;color:var(--muted);font-weight:500;max-width:150px}
+.gt td{padding:5px 8px;border-bottom:1px solid var(--line)}
+.gt tr:last-child td{border-bottom:0}
+.gt .nm{font-weight:600;white-space:nowrap}
+.gt .nm em{font-style:normal;font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.gt tr.abs td{opacity:.55}
+.gi{width:74px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 6px;text-align:center;font-family:var(--font-mono);min-height:36px}
+.gi:focus{outline:3px solid var(--accent);outline-offset:0;background:var(--panel)}
+.gi.tot{border-style:dashed}
+.gi.full{background:var(--accent-soft);border-color:var(--accent)}
+.gt .tb{white-space:nowrap;text-align:right}
+.gt-wrap{overflow:auto;max-height:58vh;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
+.gscale{width:100%;border-collapse:collapse;font-size:14px}
+.gscale td,.gscale th{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+.danger{border:1px solid var(--bad);color:var(--bad);background:var(--bad-soft);border-radius:10px;padding:9px 14px;font-weight:600;min-height:42px}
+.danger.armed{background:var(--bad);color:#fff}
+
+/* ---------- тақтадағы кесте ---------- */
+.ovl.board{background:var(--bg);backdrop-filter:none;padding:0;place-items:stretch;display:flex;flex-direction:column;z-index:70}
+.bd-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:14px max(20px,2.4vw);background:var(--panel);border-bottom:1px solid var(--line)}
+.bd-head h2{font-size:clamp(1.6rem,3vw,2.4rem)}
+.bd-sum{display:flex;flex-wrap:wrap;gap:8px;flex:1}
+.bd-sum .chip{font-size:14px;padding:6px 12px}
+.bd-list{--rh:44px;flex:1;min-height:0;padding:14px max(20px,2.4vw);display:grid;gap:8px 28px;align-content:start;grid-auto-flow:column}
+.bd-row{height:var(--rh);display:grid;grid-template-columns:2.1em minmax(0,1fr) minmax(70px,.9fr) minmax(70px,.9fr) 3.2em 2.6em;gap:12px;align-items:center;padding:0 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:clamp(13px,calc(var(--rh)*.4),26px);line-height:1.1;overflow:hidden}
+.bd-rk{font-family:var(--font-mono);font-weight:800;color:var(--muted);text-align:center}
+.bd-row.top1 .bd-rk,.bd-row.top2 .bd-rk,.bd-row.top3 .bd-rk{width:1.7em;height:1.7em;display:grid;place-items:center;border-radius:50%;color:#fff;font-size:.9em}
+.bd-row.top1 .bd-rk{background:#c99a14}
+.bd-row.top2 .bd-rk{background:#8b99a6}
+.bd-row.top3 .bd-rk{background:#b06a3b}
+.bd-nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-nm em{font-style:normal;font-weight:400;color:var(--muted);margin-left:8px;font-size:.7em}
+.bd-m{position:relative;height:calc(var(--rh)*.5);border-radius:999px;background:var(--panel2);overflow:hidden;display:flex;align-items:center}
+.bd-m i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bd-m.part i{background:var(--accent-soft);border-right:3px solid var(--accent)}
+.bd-m.task i{background:var(--warm-soft);border-right:3px solid var(--warm)}
+.bd-m b{position:relative;margin-left:10px;font-family:var(--font-mono);font-weight:700;font-size:.82em}
+.bd-tot{font-family:var(--font-mono);font-weight:800;font-size:1.25em;text-align:right;color:var(--accent)}
+.bd-gr{font-family:var(--font-mono);font-weight:800;text-align:center;border-radius:8px;background:var(--panel2);padding:2px 0}
+.bd-foot{display:flex;flex-wrap:wrap;gap:6px 22px;padding:10px max(20px,2.4vw) 14px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);background:var(--panel)}
+.bd-foot span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px;background:var(--accent-soft);border:2px solid var(--accent)}
+.bd-foot span.t::before{background:var(--warm-soft);border-color:var(--warm)}
+.bd-foot span.n::before{display:none}
+.bd-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0;font-size:1.3rem}
+
+/* ---------- дөңгелек ---------- */
+.wheelbox{position:fixed;right:16px;bottom:70px;width:344px;max-height:calc(100vh - 140px);overflow:auto;z-index:40;background:var(--panel);border:1px solid var(--accent);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.32);padding:12px 14px 14px;display:flex;flex-direction:column;gap:9px}
+.wheelbox[hidden]{display:none}
+.wh-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wh-head b{font-size:1.02rem}
+.wh-ctx{font-family:var(--font-mono);font-size:12.5px;color:var(--accent);letter-spacing:.03em}
+.wh-cv{width:min(100%,34vh,316px);aspect-ratio:1;align-self:center;display:block}
+.wh-spin{width:100%}
+.wh-opt{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.wh-opt label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.wh-res{border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--panel2)}
+.wh-name{font-size:1.5rem;font-weight:800;line-height:1.1;letter-spacing:-.01em;min-height:1.1em}
+.wh-name.pop{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+.wh-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wh-btns button{border:1px solid var(--line);background:var(--panel);border-radius:9px;min-height:38px;font-weight:700}
+.wh-btns button[data-r="ok"]:hover{background:var(--accent-soft);border-color:var(--accent)}
+.wh-btns button[data-r="no"]:hover{background:var(--bad-soft);border-color:var(--bad)}
+.wh-btns button[disabled]{opacity:.4;cursor:default}
+.wh-note{font-size:13px;color:var(--muted);min-height:1.3em}
+.wh-note.good{color:var(--accent);font-weight:600}
+.wh-note.bad{color:var(--bad);font-weight:600}
+body.wheel-dock .slide.active .wrap{margin-left:0!important;margin-right:366px!important;max-width:none!important}
+body.wheel-dock .slide.active .wrap.quiz{max-width:880px!important}
+@media (max-width:1000px){
+  body.wheel-dock .slide.active .wrap{margin-right:auto!important}
+  .wheelbox{left:12px;right:12px;width:auto}
+}
+
+.bd-list.d3 .bd-row{grid-template-columns:1.8em minmax(0,1fr) 2.4em 2.4em 2.7em 2.3em;gap:7px;padding:0 10px}
+.bd-list.d3 .bd-m{background:none;height:auto;justify-content:center}
+.bd-list.d3 .bd-m i{display:none}
+.bd-list.d3 .bd-m b{margin:0;padding:2px 0;width:100%;text-align:center;border-radius:6px}
+.bd-list.d3 .bd-m.part b{background:var(--accent-soft);color:var(--accent)}
+.bd-list.d3 .bd-m.task b{background:var(--warm-soft);color:var(--warm)}
+.bd-list.d3 .bd-row{font-size:calc(var(--rh)*.3)}
+
+/* ================= КІРУ: рөл таңдау және курстар ================= */
+html:not([data-role="teacher"]) .t-only{display:none!important}
+html[data-role="teacher"] .s-only{display:none!important}
+
+.gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;overflow:auto}
+.gate[hidden]{display:none}
+.gt-top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px max(16px,2.4vw);background:var(--panel);border-bottom:1px solid var(--line)}
+.gt-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gt-main{flex:1;display:flex;justify-content:center;padding:clamp(18px,4vh,48px) max(16px,3vw)}
+.gt-screen{width:min(1060px,100%);display:flex;flex-direction:column;gap:clamp(18px,3vh,32px);justify-content:center}
+.gt-screen[hidden]{display:none}
+.gt-hero{display:flex;flex-direction:column;gap:10px}
+.gt-hero h1{font-size:clamp(2rem,5vw,3.6rem)}
+.gt-hero h2{font-size:clamp(1.7rem,3.8vw,2.8rem)}
+
+.gt-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.gt-roles{grid-template-columns:minmax(0,1fr)}}
+.gt-roles[hidden]{display:none}
+.role{position:relative;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:10px;min-height:200px;transition:transform .2s,border-color .2s,box-shadow .2s}
+.role:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.12)}
+.role:active{transform:none}
+.role .ico{width:56px;height:56px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.role.t .ico{background:var(--warm-soft);color:var(--warm)}
+.role b{font-size:clamp(1.4rem,2.6vw,1.9rem);font-weight:800;letter-spacing:-.01em}
+.role span.d{color:var(--muted);font-size:1.02rem;line-height:1.4}
+.role .go{margin-top:auto;font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+.role.t .go{color:var(--warm)}
+
+.pw{width:min(460px,100%);display:flex;flex-direction:column;gap:12px;padding:18px 20px;background:var(--panel);border:1px solid var(--warm);border-radius:16px}
+.pw[hidden]{display:none}
+.pw label{display:flex;flex-direction:column;gap:6px;font-weight:600}
+.pw .err{min-height:1.3em;color:var(--bad);font-weight:600;font-size:14px}
+.pw.shake{animation:shake .35s}
+
+.gt-stat{display:flex;flex-wrap:wrap;gap:8px}
+.gt-list{display:flex;flex-direction:column;gap:10px}
+.lesson{display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 18px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.lesson .ln{font-family:var(--font-mono);font-weight:700;font-size:1.15rem;text-align:center;padding:8px 0;border-radius:10px;background:var(--panel2);color:var(--muted)}
+.lesson h3{font-size:1.06rem;line-height:1.3}
+.lesson p{font-size:14px;color:var(--muted);margin-top:3px}
+.lesson.open{border:2px solid var(--accent);background:var(--panel);box-shadow:0 10px 28px rgba(10,125,94,.16)}
+.lesson.open .ln{background:var(--accent);color:var(--accent-ink)}
+.lesson.open h3{font-size:1.2rem}
+.lesson.locked{opacity:.6;background:var(--panel2);border-style:dashed}
+.lesson .lk{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.lesson .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lesson .tags .chip{font-size:11.5px;padding:3px 9px}
+@media (max-width:640px){
+  .lesson{grid-template-columns:54px minmax(0,1fr);gap:12px}
+  .lesson .act{grid-column:1/-1}
+}
+.menu-extra{display:flex;flex-direction:column;gap:6px;padding:10px 10px 0}
+.menu-extra .mi .n{font-size:18px}
+
+/* ===== LIVE: студенттің кіруі және жіберуі ===== */
+a.pill{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+#gtLogin .pw{border-color:var(--accent)}
+#gtLogin .code{font-family:var(--font-mono);font-size:2rem;letter-spacing:.5em;text-align:center;font-weight:700}
+.lg-demo{font-size:13px;color:var(--warm);background:var(--warm-soft);border:1px solid var(--warm);border-radius:10px;padding:8px 12px}
+.lg-demo[hidden]{display:none}
+.rub label.rrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;font-size:.93rem;line-height:1.35;cursor:pointer;padding:5px 6px;border-radius:9px;border:1px solid transparent}
+.rub label.rrow input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent)}
+.rub label.rrow:has(input:checked){background:var(--accent-soft);border-color:var(--accent)}
+.rub label.rrow.no{opacity:.55;text-decoration:line-through}
+.rub label.rrow.yes{background:var(--accent-soft);border-color:var(--accent)}
+.livebox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:9px}
+.livebox .st{font-weight:600;line-height:1.4}
+.livebox .st.call{color:var(--warm)}
+.livebox .st.done{color:var(--accent)}
+.livebox .st.bad{color:var(--bad)}
+.livebox .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.livebox .clock{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.livebox .clock.over{color:var(--bad);font-weight:700}
+.livebox .sum{font-family:var(--font-mono);font-size:13px}
+
+#rankBox{position:fixed;right:14px;top:64px;z-index:60;width:min(320px,calc(100vw - 28px));max-height:70vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.25)}
+#rankBox .rk-h{display:flex;justify-content:space-between;padding:2px 4px 8px;color:var(--muted)}
+#rankBox .rk{display:grid;grid-template-columns:26px 1fr auto;gap:8px;padding:5px 6px;border-radius:8px;align-items:center}
+#rankBox .rk i{font-style:normal;font-family:var(--font-mono);color:var(--muted)}
+#rankBox .rk b{font-family:var(--font-mono)}
+#rankBox .rk.me{background:var(--accent-soft);color:var(--accent)}
+
+.prac.prelock{grid-template-columns:minmax(0,1fr)}
+#liveOvl{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column}
+#liveOvl[hidden]{display:none}
+#liveOvl .lo-bar{display:flex;gap:14px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+#liveOvl iframe{flex:1;border:0;width:100%}
+[hidden]{display:none!important}
+
+@media (prefers-reduced-motion: reduce){
+  .slide,.rv,.tl-bar i,.cells-svg .cell,.case-svg .cell,.vp-stack span{transition:none!important}
+  .rv{transform:none}
+  .opt.wrong{animation:none}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="9" height="9" style="fill:var(--bad-soft)"/>
+      <line x1="0" y1="0" x2="0" y2="9" style="stroke:var(--bad);stroke-width:3"/>
+    </pattern>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><button class="pill" id="menuBtn" aria-expanded="false" aria-controls="menu" title="Мазмұны: кез келген слайдқа өту (M)">☰ Мазмұны</button><span class="mark" aria-hidden="true"></span><b>Surface</b><span class="sub">3ds Max · практика №7–8</span></div>
+    <div class="tools">
+      <span class="phase" id="phase">Кіріспе · 5 мин</span>
+      <button class="pill s-only" id="toPrac" title="Практика мен критерийлерге өту">Практика →</button>
+      
+      <button class="pill t-only" id="timerBtn" aria-pressed="false" title="Таймер: бастау / тоқтату (T)">▶ 50:00</button>
+      <button class="pill t-only" id="timerReset" title="Таймерді қайта қою">↺</button>
+      <button class="pill t-only" id="notesBtn" aria-pressed="false" title="Жазбалар (N)">Жазба</button>
+      <a class="pill t-only" id="liveLink" href="teacher.html" target="_blank" rel="noopener" title="Журнал: код, шақырулар, баллдар, рейтинг (G)">Журнал</a>
+      <button class="pill t-only" id="gbBtn" title="Журнал: тіркеу және бағалау (G)">Журнал</button>
+      <button class="pill t-only" id="bdBtn" title="Балл кестесі тақтада (B)">Кесте</button>
+      <button class="pill t-only" id="whBtn" aria-pressed="false" title="Айналдыру: сұраққа жауап беретін студентті таңдау (W)">🎡 Айналдыру</button>
+      
+      <button class="pill" id="themeBtn" title="Тақырып: жарық / қараңғы">◐</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split">
+          <div class="stack-col">
+            <p class="eyebrow">3ds Max · практикалық сабақ № 7–8</p>
+            <h1>Surface<br>модификаторы</h1>
+            <p class="lead">Бірнеше сызықтан тұтас <strong>3D бет</strong> қалай пайда болады?</p>
+            <div class="chips"><span class="chip">50 минут</span><span class="chip">Компьютерлік инженерия</span><span class="chip">Сплайн → Бет → Қалыңдық</span></div>
+            <p class="hint">Алға: <kbd>→</kbd> немесе <kbd>Space</kbd></p>
+          </div>
+          <div class="vp"><canvas id="heroCanvas" aria-label="Жапырақ қаңқасынан бет пайда болатын 3D анимация"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Shaded ]</span><span class="vp-hint">тінтуірмен айналдыруға болады</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split even">
+          <div class="stack-col">
+            <p class="eyebrow">Сабақ мақсаты</p>
+            <h2>Сабақ соңында сіз…</h2>
+            <ol class="goal-list">
+              <li><span>Сплайн қаңқасының <strong>негізгі ережесін</strong> айтасыз</span></li>
+              <li><span><strong>Surface</strong> модификаторымен бет жасайсыз</span></li>
+              <li><span><strong>Steps, Flip Normals, Shell</strong> параметрлерін өзгертесіз</span></li>
+            </ol>
+            <p class="hint"><strong>Бағалау:</strong> қатысым 40 балл + тапсырмалар 60 балл = 100 балл. Критерийлер 9-слайдта.</p>
+          </div>
+          <div class="tl" id="timeline">
+            <div class="tl-row rv" style="--w:13%"><span class="tl-min">4 мин</span><div><div class="tl-t">Кіріспе</div><div class="tl-d">Қызық мысал және мақсат</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:20%"><span class="tl-min">6 мин</span><div><div class="tl-t">Түсіндіру</div><div class="tl-d">Ереже, 5 қадам, параметрлер</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:13%"><span class="tl-min">4 мин</span><div><div class="tl-t">Қатені тап</div><div class="tl-d">Үш жағдай, жұппен талқылау</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:100%"><span class="tl-min">30 мин</span><div><div class="tl-t">Практика</div><div class="tl-d">Жапырақ, гүл құмырасы, қасық</div><div class="tl-bar"><i></i></div></div></div>
+            <div class="tl-row rv" style="--w:20%"><span class="tl-min">6 мин</span><div><div class="tl-t">Тест және қорытынды</div><div class="tl-d">5 сұрақ, жұмыстарды көрсету, рефлексия</div><div class="tl-bar"><i></i></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-phase="0">
+      <div class="wrap">
+        <div class="split">
+          <div class="stack-col">
+            <p class="eyebrow">Сиқыр</p>
+            <h2>Үш сызық әлі бет емес</h2>
+            <p class="big">Қараңыз: бұл жерде тек <strong>сызықтар мен шыңдар</strong> бар. Ішінде ештеңе жоқ, жапырақтың беті көрінбейді.</p>
+            <p class="big" id="hookQ"><strong>Сұрақ:</strong> компьютер сызықтардың арасын «жабу» үшін не істеуі керек?</p>
+            <p class="big" id="hookA" style="display:none">Модификатор сызықтардың арасына <strong>бет тартты</strong>. Сымнан қаңқа жасап, үстіне мата тартқандай. Көлік корпусы, аяқ киім, ыдыс осылай жасалады.</p>
+            <div class="row"><button class="btn" id="hookBtn">Surface қосу</button><button class="btn ghost" id="hookReset">Қайта бастау</button></div>
+          </div>
+          <div class="vp"><canvas id="hookCanvas" aria-label="Қаңқаға Surface қосу"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Wireframe ]</span>
+            <div class="vp-stack"><span class="new" id="hookNew">Surface</span><span>Editable Spline</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <p class="eyebrow">Негізгі ереже</p>
+        <h2>Қаңқаның әр ұясында 3 немесе 4 шың</h2>
+        <svg class="cells-svg" id="cellsSvg" viewBox="0 0 760 280" role="img" aria-label="Үшбұрыш және төртбұрыш ұялар жабылады, бесбұрыш тесік болып қалады">
+          <polygon class="cell ok" points="130,215 270,215 200,80"/>
+          <g class="vtx-g"><rect class="vtx" x="123" y="208" width="14" height="14"/><rect class="vtx" x="263" y="208" width="14" height="14"/><rect class="vtx" x="193" y="73" width="14" height="14"/></g>
+          <text class="tag ok" x="200" y="255" text-anchor="middle">3 шың · бет бар</text>
+          <polygon class="cell ok" points="320,215 470,215 455,80 335,80"/>
+          <g><rect class="vtx" x="313" y="208" width="14" height="14"/><rect class="vtx" x="463" y="208" width="14" height="14"/><rect class="vtx" x="448" y="73" width="14" height="14"/><rect class="vtx" x="328" y="73" width="14" height="14"/></g>
+          <text class="tag ok" x="395" y="255" text-anchor="middle">4 шың · бет бар</text>
+          <polygon class="cell bad" points="620,70 690,120 663,205 577,205 550,120"/>
+          <g><rect class="vtx" x="613" y="63" width="14" height="14"/><rect class="vtx" x="683" y="113" width="14" height="14"/><rect class="vtx" x="656" y="198" width="14" height="14"/><rect class="vtx" x="570" y="198" width="14" height="14"/><rect class="vtx" x="543" y="113" width="14" height="14"/></g>
+          <text class="tag bad" x="620" y="255" text-anchor="middle">5 шың · тесік</text>
+        </svg>
+        <div class="row"><button class="btn" id="cellsBtn">Surface қолдану</button><p class="hint">Бесбұрышты қалай түзетуге болады? Қосымша шыңды алып тастау немесе ұяны екіге бөлу.</p></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <p class="eyebrow">Тәсіл</p>
+        <h2>Surface жасаудың 5 қадамы</h2>
+        <div class="steps5" id="steps5">
+          <div class="step5 rv"><h3>Сызықтарды сал</h3><p>Бойлық 3 сплайн: сол жиек, ортасы, оң жиек. Шың саны бірдей.</p><span class="code">Create › Shapes › Line</span></div>
+          <div class="step5 rv"><h3>Бір нысанға біріктір</h3><p>Барлық сплайн бір Editable Spline болады.</p><span class="code">Geometry › Attach</span></div>
+          <div class="step5 rv"><h3>Қималарды қос</h3><p>Шыңдарға жабысатын көлденең сплайндар. Әр ұя 3–4 шыңнан тұрады.</p><span class="code">Snaps Toggle › Vertex</span></div>
+          <div class="step5 rv"><h3>Surface қолдан</h3><p>Қаңқаның бетіне бет тартылады. Threshold пен Steps реттеледі.</p><span class="code">Modifier List › Surface</span></div>
+          <div class="step5 rv"><h3>Бетті тексер</h3><p>Қара болса, Flip Normals. Қалыңдық керек болса, Shell.</p><span class="code">Flip Normals · Shell</span></div>
+        </div>
+        <p class="hint">Интерфейс ағылшынша. Аттарын осы жазылған күйінде іздеңіз.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Зертхана</p><h2>Параметрлерді өзіңіз өзгертіңіз</h2></div></div>
+        <div class="lab">
+          <div class="vp"><canvas id="labCanvas" aria-label="Surface параметрлерін өзгертуге болатын 3D көрініс"></canvas><span class="vp-label">[ + ] [ Perspective ] [ Shaded + Edged ]</span><span class="vp-hint">сүйреп айналдырыңыз</span></div>
+          <div class="ro" id="labPanel">
+            <div class="ro-head">Modifier Stack</div>
+            <div class="ro-body">
+              <div class="two"><label><input type="checkbox" id="labShell"> Shell</label><label><input type="checkbox" id="labSurf" checked> Surface</label></div>
+              <div class="line dim">Editable Spline</div>
+              <div class="sep"></div>
+              <div class="line dim">Threshold <span class="val" style="color:#aeb9c3">0,1</span></div>
+              <div class="two"><label><input type="checkbox" id="labFlip"> Flip Normals</label><label><input type="checkbox" id="labTwo"> 2-Sided</label></div>
+              <div>Steps <span class="val" id="labStepsV">6</span><input type="range" id="labSteps" min="1" max="12" value="6" aria-label="Steps"></div>
+              <div id="labThickWrap" hidden>Shell · Outer Amount <span class="val" id="labThickV">0,12</span><input type="range" id="labThick" min="0.02" max="0.4" step="0.01" value="0.12" aria-label="Қалыңдық"></div>
+              <div class="two"><label><input type="checkbox" id="labCage" checked> Қаңқа</label><label><input type="checkbox" id="labSpin"> Айналу</label></div>
+              <div class="btns"><button type="button" data-view="persp">Persp</button><button type="button" data-view="top">Top</button><button type="button" data-view="front">Front</button><button type="button" data-view="bottom">Асты</button></div>
+              <div class="stats" id="labStats"></div>
+            </div>
+          </div>
+        </div>
+        <div class="asks"><span class="ask">Steps = 1 болса не болады?</span><span class="ask">Flip Normals қоссақ?</span><span class="ask">Астынан қарасақ ше?</span><span class="ask">Shell қалыңдығы 0,4 болса?</span></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-phase="1">
+      <div class="wrap">
+        <div class="split even">
+          <div class="stack-col">
+            <p class="eyebrow">Threshold</p>
+            <h2>Бет шықпаудың жиі себебі: жалғанбаған шың</h2>
+            <p class="big">Екі шың алыс болса, ұяда <strong>5 шың</strong> болып қалады да, бет шықпайды. <strong>Threshold</strong> осы шыңдарды біріктіретін қашықтық.</p>
+            <div class="slider"><label for="thrD">A мен B арақашықтығы <output id="thrDo">4</output></label><input type="range" id="thrD" min="0" max="10" step="0.5" value="4"></div>
+            <div class="slider"><label for="thrT">Threshold <output id="thrTo">1</output></label><input type="range" id="thrT" min="0" max="10" step="0.5" value="1"></div>
+            <div class="verdict bad" id="thrVerdict"></div>
+          </div>
+          <svg class="thr-svg" id="thrSvg" viewBox="0 0 560 290" role="img" aria-label="Екі шыңның біріктірілуі"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-phase="2">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Ойын</p><h2>Қатені тап: бет неге дұрыс шықпады?</h2></div><span class="score" id="gameScore">Шешілді: 0 / 3</span></div>
+        <div class="tabs" id="caseTabs" role="tablist"></div>
+        <div class="split even">
+          <div id="caseArt"></div>
+          <div class="stack-col">
+            <h3 id="caseQ"></h3>
+            <div class="opts" id="caseOpts"></div>
+            <div class="explain" id="caseEx" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-phase="3">
+      <div class="wrap">
+        <div class="row" style="justify-content:space-between"><div><p class="eyebrow">Практика · 30 минут</p><h2>Өз бетіңізді жасаңыз</h2></div>
+          <div class="tabs" id="pracTabs" role="tablist"></div></div>
+        <div class="prac">
+          <div class="stack-col"><div class="meter" aria-hidden="true"><i id="pracMeter"></i></div><ul class="todo" id="pracList"></ul></div>
+          <div class="stack-col">
+            <div class="card"><h3 id="pracTitle"></h3><p class="muted" id="pracGoal" style="margin-top:6px"></p></div>
+            <div class="tip" id="pracTip"></div>
+            <div class="card"><h3 id="pracRubT">Бағалау критерийлері</h3><div class="rub" id="pracRub"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-phase="4">
+      <div class="wrap quiz" style="margin-left:auto;margin-right:auto">
+        <p class="eyebrow">Тест · 5 сұрақ</p>
+        <div class="qbar" id="qBar"></div>
+        <div id="quizBody" class="stack-col"></div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-phase="4">
+      <div class="wrap">
+        <p class="eyebrow">Қорытынды</p>
+        <h2>Бүгін не үйрендік</h2>
+        <div class="take" id="take">
+          <div class="rv"><b>Қаңқа</b>Шыңдары бірдей сплайндар, бір нысанға біріктірілген</div>
+          <div class="rv"><b>Ереже</b>Әр ұя 3 немесе 4 шыңнан тұрады</div>
+          <div class="rv"><b>Surface</b>Threshold, Steps, Flip Normals</div>
+          <div class="rv"><b>Shell</b>Бетке қалыңдық береді</div>
+        </div>
+        <div class="r321 rv" id="r321">
+          <div><strong>3</strong><span>Үш нәрсе үйрендім</span></div>
+          <div><strong>2</strong><span>Екі нәрсе қиын болды</span></div>
+          <div><strong>1</strong><span>Бір сұрағым бар</span></div>
+        </div>
+        <div class="card rv"><h3>Үй тапсырмасы</h3><p class="muted" style="margin-top:4px">Қасықты аяқтаңыз немесе өз нысаныңызды Surface-пен жасаңыз: шыны, қайық, жапырақ. Қаңқаның да, бетінің де суретін жіберіңіз.</p></div>
+        <p class="lead" style="margin-top:4px">Назарларыңызға рахмет. Сұрақтар?</p>
+      </div>
+    </section>
+
+    <aside class="notes t-only" id="notes" hidden><h4 id="notesHead">Жазба</h4><p id="notesText"></p></aside>
+  </main>
+
+  <footer class="nav">
+    <button class="btn ghost" id="prevBtn" aria-label="Алдыңғы слайд">←</button>
+    <div class="dots" id="dots"></div>
+    <span class="count" id="count">1 / 11</span>
+    <button class="btn" id="nextBtn" aria-label="Келесі слайд">→</button>
+  </footer>
+</div>
+
+<div class="menu-scrim" id="menuScrim"></div>
+<nav class="menu" id="menu" aria-label="Мазмұны" aria-hidden="true">
+  <div class="menu-head"><b>Мазмұны</b><button class="pill" id="menuClose" aria-label="Жабу">✕</button></div>
+  <div class="menu-list" id="menuList"></div>
+  <div class="menu-foot">Кез келген слайдқа өту үшін басыңыз. Тікелей сілтеме: <span style="font-family:var(--font-mono)">#s9</span> = практика.</div>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<aside class="wheelbox t-only" id="wheelbox" hidden aria-label="Студент таңдайтын дөңгелек">
+  <div class="wh-head"><b>Кім жауап береді?</b><button class="mini" id="whClose" aria-label="Жабу">✕</button></div>
+  <div class="wh-ctx" id="whCtx"></div>
+  <canvas class="wh-cv" id="whCv" width="316" height="316" aria-label="Студенттер дөңгелегі"></canvas>
+  <button class="btn wh-spin" id="whSpin">Айналдыру</button>
+  <div class="wh-opt"><label><input type="checkbox" id="whNoRep" checked> Қайталамау</label><span id="whPool"></span></div>
+  <div class="wh-res">
+    <div class="wh-name" id="whName">—</div>
+    <div class="wh-btns"><button data-r="ok" disabled>✓ <span id="whOk"></span></button><button data-r="half" disabled>½ <span id="whHalf"></span></button><button data-r="no" disabled>✗ 0</button></div>
+    <div class="wh-note" id="whNote"></div>
+  </div>
+</aside>
+
+<div class="ovl t-only" id="gb" hidden role="dialog" aria-modal="true" aria-label="Журнал">
+  <div class="gb-card">
+    <div class="gb-head">
+      <h2>Журнал</h2>
+      <div class="gb-tabs" id="gbTabs" role="tablist"></div>
+      <span class="gb-sp"></span>
+      <input class="inp" id="gbSearch" type="search" placeholder="Іздеу…" autocomplete="off">
+      <span class="hint" id="gbSave"></span>
+      <button class="pill" id="gbUndo" title="Соңғы қосылған баллды болдырмау">↶ Болдырмау</button>
+      <button class="pill" id="gbBoard" title="Тақтаға шығару (B)">Кесте</button>
+      <button class="pill" id="gbCsv" title="Excel-ге жүктеу">CSV</button>
+      <button class="pill" id="gbClose" aria-label="Жабу">✕</button>
+    </div>
+    <div class="gb-body" id="gbBody"></div>
+  </div>
+</div>
+
+<div class="ovl board t-only" id="board" hidden role="dialog" aria-modal="true" aria-label="Балл кестесі">
+  <div class="bd-head">
+    <div><p class="eyebrow">Surface · 3ds Max · практика №7–8</p><h2>Балл кестесі</h2></div>
+    <div class="bd-sum" id="bdSum"></div>
+    <button class="pill" id="bdJ">Журнал</button>
+    <button class="pill" id="bdClose">✕ Жабу (Esc)</button>
+  </div>
+  <div class="bd-list" id="bdList"></div>
+  <div class="bd-foot"><span>Қатысым (40)</span><span class="t">Тапсырма (60)</span><span class="n">Барлығы: 100 балл</span><span class="n" id="bdGrades"></span></div>
+</div>
+
+
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Кіру">
+  <header class="gt-top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><b>3D-модельдеу және CAD-жүйелер</b></div>
+    <div class="gt-tools">
+      <span class="phase" id="gtRole" hidden></span>
+      <button class="pill" id="gtSwitch" hidden>Рөлді ауыстыру</button>
+      <button class="pill" id="gtTheme" title="Тақырып: жарық / қараңғы">◐</button>
+    </div>
+  </header>
+  <main class="gt-main">
+    <section class="gt-screen" id="gtRoles">
+      <div class="gt-hero">
+        <p class="eyebrow">Қ. Жұбанов атындағы Ақтөбе өңірлік университеті · Компьютерлік инженерия</p>
+        <h1>Практикалық сабақтарға қош келдіңіз</h1>
+        <p class="lead">Кіру үшін рөліңізді таңдаңыз.</p>
+      </div>
+      <div class="gt-roles">
+        <button type="button" class="role s" data-role="student">
+          <span class="ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.6 3.5-5.4 7-5.4s6.4 1.8 7 5.4"/></svg></span>
+          <b>Студент</b>
+          <span class="d">Сабақты өтемін, параметрлерді өзгертіп көремін, ойын ойнап, тапсырма мен тест орындаймын.</span>
+          <span class="go">Кіру →</span>
+        </button>
+        <button type="button" class="role t" data-role="teacher">
+          <span class="ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="11" rx="1.6"/><path d="M8 20l4-5 4 5M7 9h6M7 12h9"/></svg></span>
+          <b>Мұғалім</b>
+          <span class="d">Сабақты түсіндіру: слайдтар, таймер, жазбалар. Код, балл және рейтинг журналда.</span>
+          <span class="go">Кіру →</span>
+        </button>
+      </div>
+      <div class="pw" id="gtPw" hidden>
+        <label>Мұғалімнің құпиясөзі<input class="inp" type="password" id="gtPwIn" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="err" id="gtPwErr" role="alert"></div>
+        <div class="row"><button class="btn" type="button" id="gtPwGo">Кіру</button><button class="btn ghost" type="button" id="gtPwBack">Артқа</button></div>
+      </div>
+    </section>
+
+    <section class="gt-screen" id="gtLogin" hidden>
+      <div class="gt-hero">
+        <p class="eyebrow">Студент · кіру</p>
+        <h2>Сабаққа кіру</h2>
+        <p class="lead">Тобыңыз бен атыңызды тізімнен таңдап, мұғалім экранға шығарған кодты жазыңыз.</p>
+      </div>
+      <div class="pw" id="lgBox">
+        <label>Сабақ коды<input class="inp code" id="lgCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000"></label>
+        <label>Тобы<select class="inp" id="lgGroup"></select></label>
+        <label>Аты-жөні<select class="inp" id="lgName"></select></label>
+        <div class="err" id="lgErr" role="alert"></div>
+        <div class="row"><button class="btn" type="button" id="lgGo">Кіру</button><button class="btn ghost" type="button" id="lgBack">Артқа</button></div>
+        <div class="lg-demo" id="lgDemo" hidden>DEMO режимі: Firebase бапталмаған. Деректер осы браузерде ғана сақталады.</div>
+      </div>
+    </section>
+
+    <section class="gt-screen" id="gtCourses" hidden>
+      <div class="gt-hero">
+        <p class="eyebrow">Курстар</p>
+        <h2>3D-модельдеу және CAD-жүйелер</h2>
+        <p class="lead">6B06105 · Компьютерлік инженерия · 3 курс. Практикалық сабақтар: 15 жұмыс, 13 сабақ.</p>
+        <div class="gt-stat" id="gtStat"></div>
+      </div>
+      <div class="gt-list" id="gtList"></div>
+    </section>
+  </main>
+</div>
+
+
+<script>
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* =====================  3D: жапырақ қаңқасы мен беті  ===================== */
+const NC=5;
+const wid=u=>0.8*Math.pow(Math.sin(Math.PI*u),0.7)*(1-0.2*u);
+const S=(u,v)=>{const w=wid(u);return[(u-0.5)*3.1,v*w,0.38*Math.sin(Math.PI*(0.08+0.84*u))-0.2-0.16*u*u+0.4*v*v*w];};
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const vlen=a=>Math.hypot(a[0],a[1],a[2]);
+const vnorm=a=>{const l=vlen(a);return l>1e-9?[a[0]/l,a[1]/l,a[2]/l]:[0,0,1]};
+const CAGE=(()=>{
+  const long=[],cross=[],verts=[];
+  [-1,0,1].forEach(v=>{const pl=[];for(let k=0;k<=80;k++)pl.push(S(k/80,v));long.push(pl);});
+  for(let j=1;j<NC;j++){const pl=[];for(let k=0;k<=30;k++)pl.push(S(j/NC,-1+2*k/30));cross.push(pl);[-1,0,1].forEach(v=>verts.push(S(j/NC,v)));}
+  verts.push(S(0,0),S(1,0));
+  return{long,cross,verts};
+})();
+const LIGHT=vnorm([-0.45,0.65,-0.62]);
+
+class Viewport{
+  constructor(canvas,opt={}){
+    this.c=canvas;this.ctx=canvas.getContext('2d');
+    this.yaw=opt.yaw??-0.6;this.pitch=opt.pitch??0.6;this.dist=opt.dist??6.4;
+    this.yaw0=this.yaw;this.sway=!!opt.sway;this.spin=!!opt.spin;this.dragged=false;
+    this.p=Object.assign({steps:6,flip:false,two:false,shell:false,thick:0.12,cage:{l:1,c:1,v:1},showCage:true,reveal:1,fade:1},opt.params||{});
+    this.active=false;this.tw=[];this.last=0;this.dpr=1;this.W=0;this.H=0;this.onFrame=null;
+    this.build();this.bind();
+    new ResizeObserver(()=>this.resize()).observe(canvas.parentElement);this.resize();
+  }
+  build(){
+    const st=this.p.steps,U=NC*st,V=2*st,W1=V+1;
+    const P=new Array((U+1)*W1);
+    for(let i=0;i<=U;i++)for(let j=0;j<=V;j++)P[i*W1+j]=S(i/U,-1+2*j/V);
+    const acc=P.map(()=>[0,0,0]);const Q=[];
+    for(let i=0;i<U;i++)for(let j=0;j<V;j++){
+      const a=i*W1+j,b=(i+1)*W1+j,c=(i+1)*W1+j+1,d=i*W1+j+1;
+      const n=crs(sub(P[c],P[a]),sub(P[d],P[b]));const l=vlen(n);if(l<1e-10)continue;
+      Q.push({a,b,c,d,n:[n[0]/l,n[1]/l,n[2]/l],u:(i+0.5)/U});
+      for(const k of [a,b,c,d]){acc[k][0]+=n[0];acc[k][1]+=n[1];acc[k][2]+=n[2];}
+    }
+    this.P=P;this.Q=Q;this.VN=acc.map(vnorm);this.U=U;this.V=V;this.W1=W1;
+    const h=this.p.thick/2;
+    this.PT=P.map((p,k)=>[p[0]+this.VN[k][0]*h,p[1]+this.VN[k][1]*h,p[2]+this.VN[k][2]*h]);
+    this.PB=P.map((p,k)=>[p[0]-this.VN[k][0]*h,p[1]-this.VN[k][1]*h,p[2]-this.VN[k][2]*h]);
+    this.rim=[];
+    for(const j of [0,V]){
+      const dir=j===0?1:-1;
+      for(let i=0;i<U;i++){
+        const a=i*W1+j,b=(i+1)*W1+j;
+        const pts=[this.PT[a],this.PT[b],this.PB[b],this.PB[a]];
+        let n=vnorm(crs(sub(pts[1],pts[0]),sub(pts[3],pts[0])));
+        const hint=sub(P[a],P[a+dir]);
+        if(n[0]*hint[0]+n[1]*hint[1]+n[2]*hint[2]<0)n=[-n[0],-n[1],-n[2]];
+        if(vlen(sub(pts[1],pts[0]))<1e-6)continue;
+        this.rim.push({pts,n,u:(i+0.5)/U});
+      }
+    }
+  }
+  get(k){return k==='yaw'?this.yaw:k==='pitch'?this.pitch:this.p[k];}
+  set(k,v){if(k==='yaw')this.yaw=v;else if(k==='pitch')this.pitch=v;else this.p[k]=v;}
+  tween(key,to,dur){
+    this.tw=this.tw.filter(t=>t.key!==key);
+    if(reduce||dur<=0){this.set(key,to);return;}
+    this.tw.push({key,from:this.get(key),to,start:performance.now(),dur});
+  }
+  bind(){
+    const c=this.c;let sx=0,sy=0;
+    c.addEventListener('pointerdown',e=>{this.drag=true;this.dragged=true;sx=e.clientX;sy=e.clientY;this.tw=this.tw.filter(t=>t.key!=='yaw'&&t.key!=='pitch');try{c.setPointerCapture(e.pointerId)}catch(_){}});
+    c.addEventListener('pointermove',e=>{if(!this.drag)return;this.yaw+=(e.clientX-sx)*0.009;this.pitch=clamp(this.pitch+(e.clientY-sy)*0.009,-1.45,1.45);sx=e.clientX;sy=e.clientY;});
+    const up=()=>{this.drag=false};
+    c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+  }
+  resize(){
+    const r=this.c.parentElement.getBoundingClientRect();if(r.width<2||r.height<2)return;
+    this.dpr=Math.min(window.devicePixelRatio||1,2);this.W=r.width;this.H=r.height;
+    this.c.width=Math.round(r.width*this.dpr);this.c.height=Math.round(r.height*this.dpr);
+  }
+  stats(){
+    const q=this.Q.length;const sh=this.p.shell;
+    return{faces:sh?q*2+this.rim.length:q};
+  }
+  draw(now){
+    if(!this.W)return;
+    const dt=this.last?Math.min(0.1,(now-this.last)/1000):0;this.last=now;
+    for(const t of this.tw){const k=clamp((now-t.start)/t.dur);this.set(t.key,t.from+(t.to-t.from)*ease(k));}
+    this.tw=this.tw.filter(t=>now-t.start<t.dur);
+    if(!reduce&&!this.drag){
+      if(this.spin)this.yaw+=dt*0.55;
+      else if(this.sway&&!this.dragged)this.yaw=this.yaw0+0.55*Math.sin(now/1000*0.45);
+    }
+    const ctx=this.ctx,W=this.W,H=this.H,p=this.p;
+    ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2f373e');g.addColorStop(1,'#1d2328');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+    const cy=Math.cos(this.yaw),sy=Math.sin(this.yaw),cp=Math.cos(this.pitch),sp=Math.sin(this.pitch);
+    const D=this.dist,f=Math.min(W*0.78,H*1.2)*D/3.1,cx=W/2,cyy=H*0.53;
+    const tf=q=>{const x1=q[0]*cy-q[1]*sy,y1=q[0]*sy+q[1]*cy,z1=q[2]-0.05;return[x1,z1*cp+y1*sp,y1*cp-z1*sp+D];};
+    const tn=n=>{const x1=n[0]*cy-n[1]*sy,y1=n[0]*sy+n[1]*cy;return[x1,n[2]*cp+y1*sp,y1*cp-n[2]*sp];};
+    const pr=v=>{const s=f/v[2];return[cx+v[0]*s,cyy-v[1]*s];};
+
+    ctx.globalAlpha=p.fade;
+    // жер торы
+    ctx.lineWidth=1;
+    for(let k=-6;k<=6;k++){
+      const o=k*0.4,strong=k===0;
+      ctx.strokeStyle=strong?'rgba(255,255,255,.2)':'rgba(255,255,255,.075)';
+      let a=pr(tf([o,-2.4,-0.62])),b=pr(tf([o,2.4,-0.62]));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+      a=pr(tf([-2.4,o,-0.62]));b=pr(tf([2.4,o,-0.62]));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+    }
+
+    // бет
+    if(p.reveal>0.002){
+      const faces=[];
+      const ex=p.reveal*1.001;
+      if(!p.shell){
+        const T=this.P.map(tf);const sg=p.flip?-1:1;
+        for(const q of this.Q){
+          if(q.u>ex)continue;
+          const A=T[q.a],B=T[q.b],C=T[q.c],Dd=T[q.d];
+          const n=tn(q.n);const nx=n[0]*sg,ny=n[1]*sg,nz=n[2]*sg;
+          const mx=(A[0]+B[0]+C[0]+Dd[0])/4,my=(A[1]+B[1]+C[1]+Dd[1])/4,mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          const facing=-(nx*mx+ny*my+nz*mz);
+          faces.push({d:mz,pts:[A,B,C,Dd],n:[nx,ny,nz],facing,u:q.u});
+        }
+      }else{
+        const TT=this.PT.map(tf),TB=this.PB.map(tf);
+        for(const q of this.Q){
+          if(q.u>ex)continue;
+          const n=tn(q.n);
+          let A=TT[q.a],B=TT[q.b],C=TT[q.c],Dd=TT[q.d];
+          let mx=(A[0]+B[0]+C[0]+Dd[0])/4,my=(A[1]+B[1]+C[1]+Dd[1])/4,mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          faces.push({d:mz,pts:[A,B,C,Dd],n,facing:-(n[0]*mx+n[1]*my+n[2]*mz),u:q.u,cull:true});
+          A=TB[q.a];B=TB[q.b];C=TB[q.c];Dd=TB[q.d];
+          mx=(A[0]+B[0]+C[0]+Dd[0])/4;my=(A[1]+B[1]+C[1]+Dd[1])/4;mz=(A[2]+B[2]+C[2]+Dd[2])/4;
+          const m=[-n[0],-n[1],-n[2]];
+          faces.push({d:mz,pts:[A,B,C,Dd],n:m,facing:-(m[0]*mx+m[1]*my+m[2]*mz),u:q.u,cull:true,under:true});
+        }
+        for(const r of this.rim){
+          if(r.u>ex)continue;
+          const pts=r.pts.map(tf);const n=tn(r.n);
+          const mx=(pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4,my=(pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4,mz=(pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
+          faces.push({d:mz,pts,n,facing:-(n[0]*mx+n[1]*my+n[2]*mz),u:r.u,cull:true,rim:true});
+        }
+      }
+      faces.sort((a,b)=>b.d-a.d);
+      const edge=p.steps<=3;
+      for(const fc of faces){
+        let col;
+        if(fc.facing>0){
+          const sh=0.26+0.74*Math.max(0,fc.n[0]*LIGHT[0]+fc.n[1]*LIGHT[1]+fc.n[2]*LIGHT[2]);
+          col=this.shade(fc.u,sh,fc.under,fc.rim);
+        }else if(fc.cull){continue;}
+        else if(p.two){
+          const sh=0.26+0.74*Math.max(0,-(fc.n[0]*LIGHT[0]+fc.n[1]*LIGHT[1]+fc.n[2]*LIGHT[2]));
+          col=this.shade(fc.u,sh);
+        }else col='rgb(14,17,20)';
+        ctx.beginPath();
+        const q0=pr(fc.pts[0]);ctx.moveTo(q0[0],q0[1]);
+        for(let k=1;k<4;k++){const q=pr(fc.pts[k]);ctx.lineTo(q[0],q[1]);}
+        ctx.closePath();ctx.fillStyle=col;ctx.fill();
+        ctx.lineWidth=edge?1:0.7;ctx.strokeStyle=edge?'rgba(0,0,0,.38)':col;ctx.stroke();
+      }
+    }
+
+    // қаңқа
+    if(p.showCage){
+      const cg=p.cage;const over=p.reveal>0.05;
+      ctx.lineJoin='round';ctx.lineCap='round';
+      ctx.strokeStyle=over?'rgba(255,255,255,.72)':'rgba(236,242,246,.95)';ctx.lineWidth=over?1.3:1.8;
+      const drawLine=(pl,fr)=>{
+        const n=Math.max(1,Math.floor((pl.length-1)*fr));if(fr<=0)return;
+        ctx.beginPath();
+        for(let k=0;k<=n;k++){const q=pr(tf(pl[k]));if(k===0)ctx.moveTo(q[0],q[1]);else ctx.lineTo(q[0],q[1]);}
+        ctx.stroke();
+      };
+      CAGE.long.forEach(pl=>drawLine(pl,cg.l));
+      CAGE.cross.forEach(pl=>drawLine(pl,cg.c));
+      if(cg.v>0){
+        const sz=7*ease(cg.v);
+        for(const v of CAGE.verts){
+          const q=pr(tf(v));ctx.fillStyle='#f2b84b';ctx.fillRect(q[0]-sz/2,q[1]-sz/2,sz,sz);
+          ctx.lineWidth=1;ctx.strokeStyle='#1b2024';ctx.strokeRect(q[0]-sz/2,q[1]-sz/2,sz,sz);
+        }
+      }
+    }
+    ctx.globalAlpha=1;
+
+    // оське үшбұрыш
+    const o=[46,H-40],L=26;
+    [[[1,0,0],'#ff6b6b','X'],[[0,1,0],'#6bdc8b','Y'],[[0,0,1],'#6ba8ff','Z']].forEach(([a,col,t])=>{
+      const n=tn(a);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(o[0]+n[0]*L,o[1]-n[1]*L);ctx.stroke();
+      ctx.fillStyle=col;ctx.font='600 11px '+getComputedStyle(document.body).getPropertyValue('--font-mono');ctx.fillText(t,o[0]+n[0]*(L+8)-3,o[1]-n[1]*(L+8)+4);
+    });
+  }
+  shade(u,sh,under,rim){
+    const t=clamp(u*0.9);
+    let r=36+(150-36)*t,g=168+(206-168)*t,b=122+(92-122)*t;
+    if(under){r*=0.78;g*=0.78;b*=0.9;}
+    if(rim){r=190;g=210;b=150;}
+    return `rgb(${Math.round(r*sh)},${Math.round(g*sh)},${Math.round(b*sh)})`;
+  }
+}
+
+const VPS=[];
+function loop(now){
+  for(const vp of VPS){if(vp.active){if(vp.onFrame)vp.onFrame(vp,now/1000);vp.draw(now);}}
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- 1-слайд: кейіпкер ---------- */
+const hero=new Viewport($('#heroCanvas'),{yaw:-0.7,pitch:0.78,sway:true,params:{two:true,steps:8,reveal:0,cage:{l:0,c:0,v:0}}});
+VPS.push(hero);let heroT0=0;
+hero.onFrame=(vp,t)=>{
+  if(reduce){vp.p.cage={l:1,c:1,v:1};vp.p.reveal=1;vp.p.fade=1;return;}
+  const c=(t-heroT0)%14;
+  vp.p.cage={l:clamp(c/2.2),c:clamp((c-1.6)/1.6),v:clamp((c-2.8)/0.7)};
+  vp.p.reveal=clamp((c-4.4)/2.2);
+  vp.p.fade=c>12?clamp(1-(c-12)/1.8):1;
+};
+
+/* ---------- 3-слайд: сиқыр ---------- */
+const hook=new Viewport($('#hookCanvas'),{yaw:-0.75,pitch:0.74,sway:true,params:{two:true,steps:8,reveal:0}});
+VPS.push(hook);let hookT0=0;
+hook.onFrame=(vp,t)=>{
+  if(reduce){vp.p.cage={l:1,c:1,v:1};return;}
+  const c=t-hookT0;vp.p.cage={l:clamp(c/1.6),c:clamp((c-1.0)/1.2),v:clamp((c-1.9)/0.6)};
+};
+let hookOn=false;
+function hookSet(on,instant){
+  hookOn=on;hook.tween('reveal',on?1:0,instant?0:1700);
+  $('#hookBtn').textContent=on?'Surface өшіру':'Surface қосу';
+  $('#hookNew').classList.toggle('on',on);
+  $('#hookA').style.display=on?'':'none';$('#hookQ').style.display=on?'none':'';
+}
+$('#hookBtn').addEventListener('click',()=>hookSet(!hookOn));
+$('#hookReset').addEventListener('click',()=>{hookSet(false,true);hookT0=performance.now()/1000;hook.dragged=false;hook.yaw=hook.yaw0;});
+
+/* ---------- 4-слайд: ұя ережесі ---------- */
+const cellsSvg=$('#cellsSvg');
+$('#cellsBtn').addEventListener('click',e=>{const on=!cellsSvg.classList.contains('on');cellsSvg.classList.toggle('on',on);e.currentTarget.textContent=on?'Қаңқаға қайту':'Surface қолдану';});
+
+/* ---------- 6-слайд: зертхана ---------- */
+const lab=new Viewport($('#labCanvas'),{yaw:-0.7,pitch:0.7,params:{steps:6,two:false}});
+VPS.push(lab);
+function labStats(){
+  const s=lab.stats();
+  $('#labStats').innerHTML='Шыңдар: <b>14</b><br>Ұялар: <b>10</b> (4 үшбұрыш, 6 төртбұрыш)<br>Беттің полигондары: <b>'+s.faces+'</b>';
+}
+function labRebuild(){lab.p.steps=+$('#labSteps').value;lab.p.thick=+$('#labThick').value;lab.build();labStats();}
+$('#labSteps').addEventListener('input',e=>{$('#labStepsV').textContent=e.target.value;labRebuild();});
+$('#labThick').addEventListener('input',e=>{$('#labThickV').textContent=(+e.target.value).toFixed(2).replace('.',',');labRebuild();});
+$('#labFlip').addEventListener('change',e=>{lab.p.flip=e.target.checked;});
+$('#labTwo').addEventListener('change',e=>{lab.p.two=e.target.checked;});
+$('#labShell').addEventListener('change',e=>{lab.p.shell=e.target.checked;$('#labThickWrap').hidden=!e.target.checked;labStats();});
+$('#labSurf').addEventListener('change',e=>{lab.tween('reveal',e.target.checked?1:0,1300);});
+$('#labCage').addEventListener('change',e=>{lab.p.showCage=e.target.checked;});
+$('#labSpin').addEventListener('change',e=>{lab.spin=e.target.checked;});
+const VIEWS={persp:[-0.7,0.7],top:[0,1.45],front:[0,0.04],bottom:[-0.7,-0.85]};
+$$('[data-view]',$('#labPanel')).forEach(b=>b.addEventListener('click',()=>{const v=VIEWS[b.dataset.view];$('#labSpin').checked=false;lab.spin=false;lab.tween('yaw',v[0],700);lab.tween('pitch',v[1],700);}));
+labStats();
+
+/* ---------- 7-слайд: Threshold ---------- */
+function renderThr(){
+  const d=+$('#thrD').value,th=+$('#thrT').value;
+  $('#thrDo').textContent=d.toString().replace('.',',');$('#thrTo').textContent=th.toString().replace('.',',');
+  const TL=[120,40],TR=[400,40],A=[400,230],BL=[120,230];
+  const welded=d<=th+1e-9;const B=welded?A:[400-d*8,230];
+  const poly=welded?[TL,TR,A,BL]:[TL,TR,A,B,BL];
+  const pts=poly.map(p=>p.join(',')).join(' ');
+  const sq=(p,c)=>`<rect class="vtx" x="${p[0]-8}" y="${p[1]-8}" width="16" height="16"${c?` style="stroke:${c}"`:''}/>`;
+  let s=`<polygon points="${pts}" style="fill:${welded?'var(--accent-soft)':'url(#hatch)'};stroke:var(--fg);stroke-width:2.5"/>`;
+  if(th>0)s+=`<circle cx="${A[0]}" cy="${A[1]}" r="${th*8}" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 5"/>`;
+  if(!welded)s+=`<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" style="stroke:var(--bad);stroke-width:3;stroke-dasharray:4 4"/>`;
+  s+=sq(TL)+sq(TR)+sq(BL)+sq(A,welded?'var(--accent)':null);
+  if(!welded)s+=sq(B,'var(--bad)');
+  s+=`<text x="${A[0]+16}" y="${A[1]+24}">A</text>`;
+  if(!welded)s+=`<text x="${B[0]-6}" y="${B[1]+30}">B</text>`;
+  s+=`<text x="${(TL[0]+TR[0])/2}" y="28" text-anchor="middle" style="fill:var(--muted)">${welded?'4 шың':'5 шың'}</text>`;
+  $('#thrSvg').innerHTML=s;
+  const v=$('#thrVerdict');v.className='verdict '+(welded?'good':'bad');
+  v.textContent=welded?'A мен B бірікті. Ұяда 4 шың, бет бар.':'A мен B бөлек. Ұяда 5 шың, бет жоқ. Threshold-ты арақашықтықтан үлкен ет.';
+}
+$('#thrD').addEventListener('input',renderThr);$('#thrT').addEventListener('input',renderThr);renderThr();
+
+/* ---------- 8-слайд: қатені тап ---------- */
+const CASES=[
+ {tab:'1 · Тесік',q:'Бір ұя тесік болып қалды. Неге?',
+  opts:[['Steps тым аз',0],['Ұяда 5 шың бар: қабырғада артық шың тұр',1],['Flip Normals керек',0]],
+  ok:'Дұрыс. Ұяда 5 шың болса, Surface оны жаппайды. Артық шыңды алып тастасақ, ұя 4 шыңды болады.',
+  hint:'Тесік ұяның шыңдарын санап көріңіз.'},
+ {tab:'2 · Қара бет',q:'Бет бар, бірақ қап-қара. Не істейміз?',
+  opts:[['Threshold-ты 0 етеміз',0],['Сплайндарды өшіреміз',0],['Flip Normals қосамыз',1]],
+  ok:'Дұрыс. Қара түс нормаль кері қараған дегенді білдіреді. Flip Normals бетті бұрады.',
+  hint:'Түс қара: бет бар, бірақ беті кері қараған.'},
+ {tab:'3 · Қырлы бет',q:'Дөңгелек бет қырлы көрінеді. Неге?',
+  opts:[['Shell қосу керек',0],['Steps мәнін арттыру керек',1],['Attach қолдану керек',0]],
+  ok:'Дұрыс. Steps әр ұяны неше бөлікке бөлетінін реттейді. Көп болса бет тегіс болады.',
+  hint:'Қырлар көп емес, аз. Бөліктер санына қараңыз.'}
+];
+let caseI=0;const caseDone=[false,false,false];let c3timer=null;
+function poly(n,cx,cy,r){let s=[];for(let k=0;k<n;k++){const a=-Math.PI/2+2*Math.PI*k/n;s.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));}return s.join(' ');}
+function caseArt(i,fixed){
+  if(i===0){
+    const xs=[50,180,310],ys=[40,150,260];let cells='';
+    for(let r=0;r<2;r++)for(let c=0;c<2;c++){
+      const hole=(r===1&&c===1);
+      let pts=[[xs[c],ys[r]],[xs[c+1],ys[r]],[xs[c+1],ys[r+1]]];
+      if(hole)pts.push([245,ys[r+1]]);pts.push([xs[c],ys[r+1]]);
+      const fill=hole&&!fixed?'url(#hatch)':'var(--accent-soft)';
+      cells+=`<polygon class="cell" points="${pts.map(p=>p.join(',')).join(' ')}" style="fill:${fill}"/>`;
+    }
+    let v='';xs.forEach(x=>ys.forEach(y=>{v+=`<rect class="vtx" x="${x-8}" y="${y-8}" width="16" height="16"/>`}));
+    v+=`<rect class="vtx" x="237" y="252" width="16" height="16" style="opacity:${fixed?0:1}"/>`;
+    const ring=fixed?'':'';
+    return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Бір ұясы тесік қаңқа">${cells}${v}${ring}</svg>`;
+  }
+  if(i===1){
+    const fill=fixed?'#35b987':'#0d1013';
+    return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Қара жапырақ"><path d="M50,150 C95,55 245,40 320,150 C245,260 95,245 50,150Z" style="fill:${fill};stroke:var(--fg);stroke-width:2.5;transition:fill .7s"/><path d="M50,150 C140,138 230,138 320,150" style="fill:none;stroke:${fixed?'#d9f5e8':'#3a444d'};stroke-width:2.5"/><text x="180" y="${fixed?96:212}" text-anchor="middle" style="font-family:var(--font-mono);font-size:15px;fill:${fixed?'#0a3d2c':'#7d8a95'}">${fixed?'N ↑ (сыртқа қарайды)':'N ↓ (ішке қарайды)'}</text></svg>`;
+  }
+  const n=fixed?fixed:5;
+  return `<svg class="case-svg" viewBox="0 0 360 300" role="img" aria-label="Қырлы дөңгелек"><polygon id="c3Poly" points="${poly(n,180,140,105)}" style="fill:var(--accent-soft);stroke:var(--fg);stroke-width:2.5"/><text id="c3Txt" x="180" y="284" text-anchor="middle" style="font-family:var(--font-mono);font-size:16px;fill:var(--fg)">Steps = ${n<=5?1:Math.round((n-5)/3.6)+1}</text></svg>`;
+}
+function renderTabs(){
+  const t=$('#caseTabs');t.innerHTML='';
+  CASES.forEach((c,i)=>{const b=document.createElement('button');b.className='tab'+(caseDone[i]?' done':'');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===caseI);b.textContent=c.tab;b.addEventListener('click',()=>{caseI=i;renderCase();});t.appendChild(b);});
+  $('#gameScore').textContent='Шешілді: '+caseDone.filter(Boolean).length+' / 3';
+}
+function renderCase(){
+  clearInterval(c3timer);
+  
+  TQ.refresh();
+  
+  const c=CASES[caseI];renderTabs();
+  $('#caseArt').innerHTML=caseArt(caseI,caseDone[caseI]?(caseI===2?48:true):false);
+  $('#caseQ').textContent=c.q;
+  const o=$('#caseOpts');o.innerHTML='';const lt=['А','Ә','Б'];
+  c.opts.forEach((op,k)=>{
+    const b=document.createElement('button');b.type='button';b.className='opt';b.innerHTML=`<i>${lt[k]}</i><span>${op[0]}</span>`;
+    if(caseDone[caseI]){b.disabled=true;if(op[1])b.classList.add('right');}
+    b.addEventListener('click',()=>pick(k,b));o.appendChild(b);
+  });
+  $('#caseEx').textContent=caseDone[caseI]?c.ok:'Жауапты таңдаңыз.';
+}
+function pick(k,btn){
+  const c=CASES[caseI];
+  if(!c.opts[k][1]){btn.classList.remove('wrong');void btn.offsetWidth;btn.classList.add('wrong');$('#caseEx').textContent=c.hint;
+    
+    TQ.answered(false,false);
+    
+    return;}
+  caseDone[caseI]=true;
+  
+  TQ.answered(true,true);
+  $$('.opt',$('#caseOpts')).forEach(b=>b.disabled=true);btn.classList.add('right');
+  $('#caseEx').textContent=c.ok;
+  if(caseI===0){setTimeout(()=>{$('#caseArt').innerHTML=caseArt(0,true);},reduce?0:150);}
+  else if(caseI===1){$('#caseArt').innerHTML=caseArt(1,true);}
+  else{
+    let n=5;const poly3=$('#c3Poly'),tx=$('#c3Txt');
+    if(reduce){n=48;poly3.setAttribute('points',poly(n,180,140,105));tx.textContent='Steps = 12';}
+    else c3timer=setInterval(()=>{n=Math.min(48,n+3);poly3.setAttribute('points',poly(n,180,140,105));tx.textContent='Steps = '+(Math.round((n-5)/3.6)+1);if(n>=48)clearInterval(c3timer);},45);
+  }
+  renderTabs();
+}
+
+/* ---------- 9-слайд: практика ---------- */
+const PRAC=[
+ {tab:'1 · Жапырақ',min:18,title:'Жапырақ (негізгі деңгей)',
+  rub:[['Қаңқа: 3 сплайн, шың саны бірдей, қималар шыңдарға жабысқан',8],['Attach: бір нысан, ұштары бір нүктеде',6],['Surface: бет тесіксіз, Threshold пен Steps дұрыс',8],['Flip Normals және Shell: бет қара емес, қалыңдығы бар',5],['Пішін мен тазалық: жапыраққа ұқсайды',3]],
+  goal:'Үш бойлық сплайн мен қималардан бет жасап, оған қалыңдық беріңіз.',
+  tip:'<b>Кеңес:</b> әр сплайнда шың саны бірдей болсын, әйтпесе қималар шыңдарға дәл түспейді.',
+  steps:['Top көрінісінде <em>Create › Shapes › Line</em> арқылы 3 сплайн салыңыз: сол жиек, ортасы, оң жиек. Әр сплайнда шың саны бірдей.',
+         'Біреуін таңдап, <em>Geometry › Attach</em> арқылы қалған екеуін қосыңыз. Енді бір нысан.',
+         'Барлық шыңдарды таңдап, түрін <em>Smooth</em> етіңіз. Ұштарын бір нүктеге әкеліңіз.',
+         '<em>Snaps Toggle</em> (Vertex) қосып, <em>Create Line</em> арқылы көлденең қималарды салыңыз. Әр қима 3 шыңнан өтсін.',
+         'Шыңдарды Perspective-те жылжытып, жапырақты бүгіңіз. Ішкі шыңдарды <em>Bezier</em> етіп, бағыттағыштарды реттеңіз.',
+         '<em>Modifier List › Surface</em>: Threshold 0,1, Steps 15. Қара болса <em>Flip Normals</em>. Соңында <em>Shell</em> қосып қалыңдық беріңіз.']},
+ {tab:'2 · Гүл құмырасы',min:7,title:'Гүл құмырасы (орташа деңгей)',
+  rub:[['Бір жапырақ дайын, айналу центрі (Pick) дұрыс',6],['Array: Instance, 6 дана, Z = 360°, Re-Orient',8],['Көрініс: материал және рендер',4]],
+  goal:'Бір жапырақты Array арқылы көбейтіп, вазаның айналасына орналастырыңыз.',
+  tip:'<b>Кеңес:</b> айналу центрі вазаның ортасында болмаса, жапырақтар сынып кетеді. Алдымен Pick арқылы вазаны таңдаңыз.',
+  steps:['Дайын жапырақты таңдаңыз.',
+         'Айналу центрі үшін координат тізімінен <em>Pick</em> таңдап, вазаны басыңыз. Сосын <em>Use Transform Coordinate Center</em> қосыңыз.',
+         '<em>Tools › Array</em>: Type of Object = <em>Instance</em>, 1D Count = 6, Rotate Totals Z = 360°, <em>Re-Orient</em> қосулы.',
+         'Негізгі жапырақты көшіріп, көтеріп, вазаның айналасында тағы бір рет айналдырыңыз.',
+         'Жасыл материал қосып, құмыраны рендерлеңіз.']},
+ {tab:'3 · Қасық',min:5,title:'Қасық (күрделі деңгей)',
+  rub:[['Контур мен қималар: шың саны, Bezier',5],['Surface: бет тесіксіз, қара емес',4],['Түбі қалыптасқан, екі жағынан тексерілген',3]],
+  goal:'Контур мен қималардан қасықтың бетін жасаңыз және түбін қалыптастырыңыз.',
+  tip:'<b>Кеңес:</b> нәтижені екі жағынан тексеріңіз. Ұя 5 шыңды болса, қасықтың бетінде тесік шығады.',
+  steps:['Жоғарыдан көрініс: қасықтың негізгі контурын <em>Line</em> арқылы салыңыз, шыңдарын Bezier етіңіз.',
+         'Қималар үшін шеңбер немесе эллипс салыңыз. <em>Select and Uniform Scale</em> арқылы Y осі бойынша контурдың жиегіне сәйкестендіріңіз.',
+         'Барлық сплайндарды <em>Attach</em> арқылы бір нысанға қосыңыз.',
+         'Бүйірден қарап, шыңдарды төмен түсіріп қасықтың түбін қалыптастырыңыз.',
+         '<em>Surface</em> қосыңыз: Threshold 0,1, Steps 15. Қара болса <em>Flip Normals</em>.']}
+];
+let pracI=0;const pracChecked=PRAC.map(p=>p.steps.map(()=>false));
+function renderPrac(){
+  const t=$('#pracTabs');t.innerHTML='';
+  PRAC.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===pracI);b.textContent=p.tab;b.addEventListener('click',()=>{pracI=i;renderPrac();});t.appendChild(b);});
+  const p=PRAC[pracI];
+  const tot=p.rub.reduce((a,r)=>a+r[1],0);
+  $('#pracRubT').textContent='Бағалау критерийлері · '+tot+' балл';
+  $('#pracRub').innerHTML=p.rub.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')+`<div class="tot"><span>Барлық тапсырма: 60 балл (30 + 18 + 12)</span><b>${tot}</b></div>`;
+  $('#pracTitle').textContent=p.title+' · ~'+p.min+' мин';$('#pracGoal').textContent=p.goal;$('#pracTip').innerHTML=p.tip;
+  const l=$('#pracList');l.innerHTML='';
+  p.steps.forEach((s,k)=>{
+    const li=document.createElement('li');const lb=document.createElement('label');
+    lb.innerHTML=`<input type="checkbox"${pracChecked[pracI][k]?' checked':''}><span>${s}</span>`;
+    lb.firstChild.addEventListener('change',e=>{pracChecked[pracI][k]=e.target.checked;meter();});
+    li.appendChild(lb);l.appendChild(li);
+  });
+  LIVE.prac(pracI,p);
+  meter();
+}
+function meter(){const a=pracChecked[pracI];$('#pracMeter').style.width=Math.round(100*a.filter(Boolean).length/a.length)+'%';}
+
+/* ---------- 10-слайд: тест ---------- */
+const QUIZ=[
+ {q:'Surface бет тартуы үшін қаңқаның әр ұясында неше шың болуы керек?',o:['Кез келген сан','Тек 4','3 немесе 4','5 немесе одан көп'],a:2,e:'Үш немесе төрт шыңды ұяға бет тартылады. Бес және одан көп шыңды ұя тесік болып қалады.'},
+ {q:'Surface-тен кейін бет қара көрінсе, не істейсіз?',o:['Flip Normals белгісін қоямыз','Сплайндарды өшіреміз','Threshold-ты 100 етеміз','3ds Max-ты қайта ашамыз'],a:0,e:'Қара түс нормаль кері қараған дегенді білдіреді. Flip Normals оны бұрады.'},
+ {q:'Екі шың бір-біріне өте жақын, бірақ біріктірілмеген. Қай параметр көмектеседі?',o:['Steps','Threshold','Shell','Force 2-Sided'],a:1,e:'Threshold шыңдарды біріктіру қашықтығын береді. Ол үлкен болса, жақын шыңдар бір болып есептеледі.'},
+ {q:'Бетке қалыңдық беру үшін қай модификатор қосылады?',o:['Lathe','Shell','Bevel','Noise'],a:1,e:'Shell жұқа бетті қалыңдығы бар көлемді нысанға айналдырады.'},
+ {q:'Steps мәнін 1-ден 12-ге көбейтсек, не өзгереді?',o:['Бет қара болады','Шыңдар саны азаяды','Бет тығыз торлы және тегіс болады','Қалыңдық пайда болады'],a:2,e:'Steps әр ұяның бөліктер санын реттейді. Көп болса бет тегіс, бірақ полигон саны өседі.'}
+];
+let qi=0,qScore=0;const qRes=[];
+function renderQuiz(){
+  const bar=$('#qBar');bar.innerHTML=QUIZ.map((_,i)=>`<i class="${i<qRes.length?(qRes[i]?'on':'bad'):''}"></i>`).join('');
+  const body=$('#quizBody');
+  if(qi>=QUIZ.length){
+    const msg=qScore===5?'Тамаша! Сіз Surface-ті толық меңгердіңіз.':qScore>=3?'Жақсы. Қателескен сұрақтарды практикада тағы бір рет тексеріңіз.':'Қаңқа ережесін мен Flip Normals-ты қайталап шығайық.';
+    LIVE.test(qScore*2);
+    body.innerHTML=`<div class="result"><div class="num">${qScore} / 5</div><p class="big">${msg}</p><div class="row"><button class="btn ghost" id="qAgain">Қайта өту</button></div></div>`;
+    $('#qAgain').addEventListener('click',()=>{qi=0;qScore=0;qRes.length=0;renderQuiz();});return;
+  }
+  const Q=QUIZ[qi];
+  
+  TQ.refresh();
+  
+  body.innerHTML=`<p class="qtext">${qi+1}. ${Q.q}</p><div class="opts" id="qOpts"></div><div class="explain" id="qEx" aria-live="polite">Жауапты таңдаңыз.</div><div class="row"><button class="btn" id="qNext" hidden>${qi===QUIZ.length-1?'Нәтиже':'Келесі сұрақ'}</button></div>`;
+  const lt=['А','Ә','Б','В'];const box=$('#qOpts');
+  Q.o.forEach((t,k)=>{
+    const b=document.createElement('button');b.type='button';b.className='opt';b.innerHTML=`<i>${lt[k]}</i><span>${t}</span>`;
+    b.addEventListener('click',()=>{
+      const ok=k===Q.a;$$('.opt',box).forEach((x,j)=>{x.disabled=true;if(j===Q.a)x.classList.add('right');});
+      if(!ok)b.classList.add('wrong');
+      qRes[qi]=ok;if(ok)qScore++;
+      $('#qEx').textContent=(ok?'Дұрыс. ':'Қате. ')+Q.e;$('#qNext').hidden=false;$('#qNext').focus();
+      $('#qBar').children[qi].className=ok?'on':'bad';
+      
+      TQ.answered(ok,true);
+      
+    });
+    box.appendChild(b);
+  });
+  $('#qNext').addEventListener('click',()=>{qi++;renderQuiz();});
+}
+
+/* =====================  Слайд жүйесі  ===================== */
+const slides=$$('.slide');
+const PHASES=[['Кіріспе',4],['Түсіндіру',6],['Қатені тап',4],['Практика',30],['Қорытынды',6]];
+
+const NOTES=[
+ 'Амандасып, тақырыпты атаңыз. Сұраңыз: «Қасық пен жапырақты полигонмен салу қиын, ал сплайнмен қалай?». Анимацияны көрсетіп, назарды аударыңыз (30 секунд).',
+ 'Мақсат үшеу. Уақыт: 4 + 6 + 4 + 30 + 6 минут. Space басқан сайын жолдар бірінен соң бірі шығады. Практикаға 30 минут бар екенін ерекше айтыңыз.',
+ 'Алдымен тек сызықтарды көрсетіңіз және сұраңыз: «Бұған бет қалай тартылады?». 2–3 студенттің жауабын тыңдап, кейін «Surface қосу» батырмасын басыңыз. Көлік корпусы, аяқ киім, ыдыс мысалдарын айтыңыз.',
+ 'Бір ғана ереже: ұяда 3 немесе 4 шың. «Surface қолдану» батырмасын басыңыз: үшбұрыш пен төртбұрыш жабылады, бесбұрыш тесік болып қалады. Сұраңыз: «Бесбұрышты қалай түзетеміз?».',
+ '5 қадам практиканың картасы. Әр қадамның ағылшынша аты жазылған, себебі интерфейс ағылшынша. Space басып, қадамдарды бірте-бірте ашыңыз.',
+ 'Зертхана аудиторияны ең көп тартатын жер. Сұраңыз: «Steps 1 болса не болады?» (қырлы бет). «Flip Normals қоссақ?» (үсті қара). Тінтуірмен астынан айналдырып көрсетіңіз. Shell-ді қосып, қалыңдықты көрсетіңіз.',
+ 'Ұядағы шың саны 5 болып қалатын жиі себеп: жалғанбаған екі шың. Екі жүгірткіні өзгертіп, ұя қашан жабылатынын көрсетіңіз. Қорытынды: Threshold арақашықтықтан үлкен болса, шыңдар бірігеді.',
+ 'Аудиторияға суретті көрсетіп, «қолдарыңызды көтеріңіз: А, Ә немесе Б?» деңіз. Дұрыс жауапты басқанда түзету анимациясы шығады. Үш жағдайға 4 минут.',
+ 'Практика 30 минут: жапырақ 18, құмыра 7, қасық 5. Тапсырманы бітірген студент «Жіберу» басады, шақыру кезегі мұғалімнің тақтасында шығады. Асықпаңыз, тым тез жіберілгенін тақта белгілейді. Бітіргендер 2-деңгейге, одан қасыққа өтеді. Аралап жүріп көмектесіңіз. Жиі қателер: шың саны әртүрлі, ұяда 5 шың, Flip Normals ұмытылған.',
+ 'Бес сұрақ, әрқайсысына 20–30 секунд. Жауап берген соң түсіндірме шығады. Нәтижеге қарап не қайталау керегін байқаңыз.',
+ 'Қорытынды: төрт ой. 2–3 студенттің жұмысын көрсетіңіз. Рефлексия 3-2-1: үш нәрсе үйрендім, екі нәрсе қиын болды, бір сұрағым бар. Үй тапсырмасын айтып, рахмет айтыңыз.'
+];
+
+const isT=()=>document.documentElement.dataset.role==='teacher';
+const SLIDE_TITLES=['Surface модификаторы','Сабақ мақсаты','Үш сызық әлі бет емес','Қаңқа ережесі: 3–4 шың','Жасаудың 5 қадамы','Зертхана: параметрлер','Threshold','Қатені тап ойыны','Практика және критерийлер','Тест','Қорытынды'];
+const KEYSLIDES=new Set([8,9]);
+let cur=-1;
+const dotsEl=$('#dots');
+slides.forEach((s,i)=>{const d=document.createElement('button');d.className='dot';d.type='button';d.setAttribute('aria-label',(i+1)+'-слайд');d.addEventListener('click',()=>go(i));dotsEl.appendChild(d);});
+
+function stepEls(i){return $$('.rv',slides[i]);}
+function resetSteps(i,all){stepEls(i).forEach(e=>e.classList.toggle('on',all||reduce));slides[i].dataset.shown=all||reduce?stepEls(i).length:0;}
+
+const HOOKS={
+ 0:{enter(){heroT0=performance.now()/1000;hero.active=true;hero.dragged=false;hero.yaw=hero.yaw0;},leave(){hero.active=false;}},
+ 2:{enter(){hookSet(false,true);hookT0=performance.now()/1000;hook.dragged=false;hook.yaw=hook.yaw0;hook.active=true;},leave(){hook.active=false;}},
+ 3:{enter(){cellsSvg.classList.remove('on');$('#cellsBtn').textContent='Surface қолдану';}},
+ 5:{enter(){lab.active=true;lab.resize();},leave(){lab.active=false;}},
+ 6:{enter(){renderThr();}},
+ 7:{enter(){renderCase();}},
+ 8:{enter(){renderPrac();}},
+ 9:{enter(){renderQuiz();}}
+};
+
+function go(i,dir,all){
+  i=clamp(i,0,slides.length-1);if(i===cur)return;
+  const d=dir??(i>cur?1:-1);
+  if(cur>=0){slides[cur].classList.remove('active');slides[cur].classList.toggle('before',d>0);const h=HOOKS[cur];if(h&&h.leave)h.leave();}
+  slides.forEach((s,k)=>{if(k!==i&&k!==cur)s.classList.toggle('before',k<i);});
+  cur=i;const s=slides[i];s.classList.remove('before');s.classList.add('active');s.scrollTop=0;
+  resetSteps(i,d<0||all||!isT());
+  const h=HOOKS[i];if(h&&h.enter)h.enter();
+  
+  TQ.slide(i);
+  
+  LIVE.slide(i);
+  $$('.dot',dotsEl).forEach((x,k)=>x.classList.toggle('on',k===i));
+  $('#count').textContent=(i+1)+' / '+slides.length;
+  const ph=PHASES[+s.dataset.phase];$('#phase').textContent=ph[0]+' · '+ph[1]+' мин';
+  
+  $('#notesHead').textContent='Жазба · '+(i+1)+'-слайд';$('#notesText').textContent=NOTES[i];
+  
+  $$('.mi',$('#menuList')).forEach((x,k)=>x.classList.toggle('on',k===i));
+  $('#prevBtn').disabled=i===0;$('#nextBtn').disabled=i===slides.length-1;
+  try{history.replaceState(null,'','#s'+(i+1));}catch(e){}
+  setTimeout(()=>{VPS.forEach(v=>v.resize());},60);
+}
+function next(){
+  const el=stepEls(cur),shown=+slides[cur].dataset.shown||0;
+  if(el.length&&shown<el.length){el[shown].classList.add('on');slides[cur].dataset.shown=shown+1;if(shown===el.length-1&&cur===1)return;return;}
+  go(cur+1,1);
+}
+function prev(){go(cur-1,-1);}
+$('#nextBtn').addEventListener('click',next);$('#prevBtn').addEventListener('click',prev);
+
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('input[type=range],input[type=checkbox]'))t.blur();});
+document.addEventListener('keydown',e=>{
+  const gt=document.getElementById('gate');if(gt&&!gt.hidden)return;
+  
+  if(TQ.modal(e))return;
+  
+  if(e.key==='Escape'&&menuOpen){closeMenu();return;}
+  const t=e.target;const tag=t&&t.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+  else if((k===' '||k==='Enter')&&tag!=='BUTTON'){e.preventDefault();next();}
+  else if(k==='Home')go(0,-1);
+  else if(k==='End')go(slides.length-1,1);
+  else if(k==='m'||k==='M'||k==='ь'||k==='Ь')toggleMenu();
+  
+  else if(k==='n'||k==='N'||k==='т'||k==='Т')toggleNotes();
+  else if(k==='t'||k==='T'||k==='е'||k==='Е')toggleTimer();
+  else if(k==='g'||k==='G'||k==='п'||k==='П')$('#liveLink').click();
+  else if(k==='w'||k==='W'||k==='ц'||k==='Ц')TQ.toggleWheel();
+  
+});
+let tx=0,ty=0,tOK=false;
+const stage=$('#stage');
+stage.addEventListener('touchstart',e=>{const t=e.target;tOK=!t.closest('canvas,input,button,.ro,.todo,svg');tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+stage.addEventListener('touchend',e=>{if(!tOK)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6){dx<0?next():prev();}},{passive:true});
+
+/* ---------- мәзір ---------- */
+const menuEl=$('#menu'),scrim=$('#menuScrim');let menuOpen=false;
+$('#menuList').innerHTML=slides.map((s,i)=>{const ph=PHASES[+s.dataset.phase];return `<button type="button" class="mi${KEYSLIDES.has(i)?' key':''}" data-i="${i}"><span class="n">${i+1}</span><span class="t">${SLIDE_TITLES[i]}</span><span class="ph">${ph[0]}</span></button>`;}).join('');
+$('#menuList').addEventListener('click',e=>{const b=e.target.closest('.mi');if(!b)return;closeMenu();go(+b.dataset.i,null,true);});
+function openMenu(){menuOpen=true;menuEl.classList.add('open');scrim.classList.add('open');menuEl.setAttribute('aria-hidden','false');$('#menuBtn').setAttribute('aria-expanded','true');const on=$('.mi.on',menuEl);if(on)on.scrollIntoView({block:'center'});}
+function closeMenu(){menuOpen=false;menuEl.classList.remove('open');scrim.classList.remove('open');menuEl.setAttribute('aria-hidden','true');$('#menuBtn').setAttribute('aria-expanded','false');}
+function toggleMenu(){menuOpen?closeMenu():openMenu();}
+$('#menuBtn').addEventListener('click',toggleMenu);$('#menuClose').addEventListener('click',closeMenu);scrim.addEventListener('click',closeMenu);
+
+$('#toPrac').addEventListener('click',()=>go(8,null,true));
+
+
+/* ---------- жазбалар, таймер, тақырып ---------- */
+
+function toggleNotes(){if(!isT())return;const n=$('#notes');n.hidden=!n.hidden;$('#notesBtn').setAttribute('aria-pressed',!n.hidden);}
+$('#notesBtn').addEventListener('click',toggleNotes);
+let tLeft=50*60,tRun=false,tLast=0;
+function renderTimer(){
+  const b=$('#timerBtn');const a=Math.abs(Math.round(tLeft));const m=String(Math.floor(a/60)).padStart(2,'0'),s=String(a%60).padStart(2,'0');
+  b.textContent=(tRun?'⏸ ':'▶ ')+(tLeft<0?'+':'')+m+':'+s;b.setAttribute('aria-pressed',tRun);
+  b.classList.toggle('warn',tLeft<300&&tLeft>=60);b.classList.toggle('late',tLeft<60);
+}
+function toggleTimer(){if(!isT())return;tRun=!tRun;tLast=Date.now();renderTimer();}
+$('#timerBtn').addEventListener('click',toggleTimer);
+$('#timerReset').addEventListener('click',()=>{tLeft=50*60;tRun=false;renderTimer();});
+setInterval(()=>{if(!tRun)return;const n=Date.now();tLeft-=(n-tLast)/1000;tLast=n;renderTimer();},250);
+renderTimer();
+
+
+const root=document.documentElement;
+$('#themeBtn').addEventListener('click',()=>{
+  const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme=dark?'light':'dark';store.set('surface-theme',root.dataset.theme);
+});
+const savedTheme=store.get('surface-theme');if(savedTheme==='light'||savedTheme==='dark')root.dataset.theme=savedTheme;
+
+/* =====================  ОҚЫТУШЫ: журнал, кесте, дөңгелек  ===================== */
+
+const KEY='surface-journal-v1',MAXP=40,MAXT=60;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>String(Math.round(n*10)/10).replace('.',',');
+const num=v=>{const x=parseFloat(String(v).replace(',','.'));return isNaN(x)?null:x;};
+const mod2=(x,m)=>((x%m)+m)%m;
+const GRADES=[[95,'A','4,0'],[90,'A-','3,67'],[85,'B+','3,33'],[80,'B','3,0'],[75,'B-','2,67'],[70,'C+','2,33'],[65,'C','2,0'],[60,'C-','1,67'],[55,'D+','1,33'],[50,'D','1,0'],[0,'F','0']];
+const gradeOf=p=>GRADES.find(g=>p>=g[0]);
+const TOT=PRAC.map(p=>p.rub.reduce((a,r)=>a+r[1],0));
+
+let D={cfg:{att:10,ok:5,half:2},mode:'crit',seq:1,students:[]};
+let saveOK=true,tab='reg',taskI=0,q='',delArm=0;
+const undo=[];
+(function load(){
+  try{
+    const j=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(j&&Array.isArray(j.students)){
+      D.students=j.students;D.seq=j.seq||j.students.length+1;D.mode=j.mode==='final'?'final':'crit';D.cfg=Object.assign(D.cfg,j.cfg||{});
+      D.students.forEach(s=>{s.ev=s.ev||[];s.rub=s.rub||[[],[],[]];s.tot=s.tot||[null,null,null];if(s.fin===undefined)s.fin=null;});
+    }
+  }catch(e){}
+})();
+function persist(){
+  try{localStorage.setItem(KEY,JSON.stringify(D));saveOK=true;}catch(e){saveOK=false;}
+  refreshAll();
+}
+let LIVE_ST=[];
+const find=id=>LIVE_ST.find(s=>s.id===id);
+const here=()=>LIVE_ST;
+const vis=s=>!q||s.name.toLowerCase().includes(q);
+
+/* ---- балл есептеу ---- */
+const sumEv=s=>s.ev.reduce((a,e)=>a+(+e.p||0),0);
+const partOf=s=>clamp(sumEv(s),0,MAXP);
+const taskOf=(s,t)=>s.tot[t]!=null?clamp(+s.tot[t],0,TOT[t]):clamp((s.rub[t]||[]).reduce((a,v)=>a+(+v||0),0),0,TOT[t]);
+const autoSum=s=>clamp(TOT.reduce((a,_,t)=>a+taskOf(s,t),0),0,MAXT);
+const tasksOf=s=>s.fin!=null?clamp(+s.fin,0,MAXT):autoSum(s);
+const totalOf=s=>Math.round((partOf(s)+tasksOf(s))*10)/10;
+
+/* ---- студент әрекеттері ---- */
+function setHere(s,v){s.here=v;s.ev=s.ev.filter(e=>e.k!=='att');if(v&&D.cfg.att)s.ev.push({k:'att',p:+D.cfg.att,l:'Қатысу',t:Date.now()});}
+function addEv(s,k,p,l){const e={k,p,l,t:Date.now()};s.ev.push(e);undo.push({id:s.id,ev:e});if(undo.length>150)undo.shift();}
+function addStudent(name,isHere){
+  name=name.trim().replace(/\s+/g,' ');if(!name)return null;
+  let s=D.students.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(s){if(isHere&&!s.here)setHere(s,true);return{s,dup:true};}
+  s={id:D.seq++,name,here:false,ev:[],rub:[[],[],[]],tot:[null,null,null],fin:null};D.students.push(s);
+  if(isHere)setHere(s,true);return{s,dup:false};
+}
+
+/* ---- хабарлама ---- */
+const toastEl=$('#toast');let toastT=0;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove('on'),2400);}
+function confirm2(btn,fn,txt){
+  if(btn.dataset.armed){clearTimeout(+btn.dataset.armed);delete btn.dataset.armed;btn.classList.remove('armed');btn.textContent=btn.dataset.t0;fn();return;}
+  btn.dataset.t0=btn.textContent;btn.classList.add('armed');btn.textContent=txt||'Растау үшін қайта басыңыз';
+  btn.dataset.armed=String(setTimeout(()=>{delete btn.dataset.armed;btn.classList.remove('armed');btn.textContent=btn.dataset.t0;},4000));
+}
+
+/* ====================  ЖУРНАЛ  ==================== */
+const gb=$('#gb'),board=$('#board'),gbBody=$('#gbBody');
+const TABS=[['reg','Тіркеу'],['part','Қатысым · 40'],['task','Тапсырмалар · 60'],['set','Параметрлер']];
+function renderGbTabs(){$('#gbTabs').innerHTML=TABS.map(t=>`<button class="tab" role="tab" aria-selected="${t[0]===tab}" data-tab="${t[0]}">${t[1]}</button>`).join('');}
+function paintSave(){$('#gbSave').textContent=saveOK?'Сақталды ✓':'⚠ Сақталмайды: CSV жүктеңіз';}
+function paintHdr(){const n=D.students.length,h=here().length;$('#gbBtn').textContent=n?'Журнал · '+h+'/'+n:'Журнал';}
+function openGb(t){closeBoard();if(t)tab=t;gb.hidden=false;renderGbTabs();renderTab();paintSave();}
+function closeGb(){gb.hidden=true;}
+function openBoard(){gb.hidden=true;board.hidden=false;renderBoard();}
+function closeBoard(){board.hidden=true;}
+function closeOverlays(){gb.hidden=true;board.hidden=true;}
+function renderTab(){
+  gbBody.innerHTML=tab==='reg'?regHTML():tab==='part'?partHTML():tab==='task'?taskHTML():setHTML();
+  if(tab==='reg')regChips();
+}
+
+/* --- тіркеу --- */
+function regHTML(){return `
+<div class="reg">
+  <div class="card stack-col">
+    <h3>Жылдам тіркеу</h3>
+    <p class="hint">Аты-жөнін жазып Enter басыңыз. Студент бірден «келді» болып, ${fmt(D.cfg.att)} балл алады.</p>
+    <div class="row"><input class="inp" id="regName" placeholder="Мысалы: Аманов Данияр" autocomplete="off" style="flex:1;min-width:160px"><button class="btn" data-a="regadd">Қосу</button></div>
+    <h3 style="margin-top:8px">Топ тізімін қою</h3>
+    <textarea class="inp" id="regList" rows="7" placeholder="Әр жолға бір студент"></textarea>
+    <div class="row"><button class="btn ghost" data-a="regimport">Тізімді жүктеу</button></div>
+    <p class="hint">Тізімнен жүктелгендер «келмеді» болып тұрады. Келгенде атын басыңыз.</p>
+  </div>
+  <div class="card stack-col">
+    <div class="row" style="justify-content:space-between"><h3>Студенттер</h3><span class="hint" id="regCount"></span></div>
+    <div class="row"><button class="btn ghost" data-a="regall">Барлығы келді</button></div>
+    <div class="schips" id="regChips"></div>
+  </div>
+</div>`;}
+function regChips(){
+  const el=$('#regChips');if(!el)return;
+  const L=D.students.filter(vis);
+  el.innerHTML=L.length?L.map(s=>`<button type="button" class="sc${s.here?' here':''}" data-a="here" data-id="${s.id}" title="${s.here?'Келді. Басыңыз: келмеді деп белгілеу':'Келді деп белгілеу'}">${esc(s.name)}<i data-a="del" data-id="${s.id}" class="${delArm===s.id?'arm':''}" title="Жою">${delArm===s.id?'жою?':'×'}</i></button>`).join(''):'<p class="hint">'+(D.students.length?'Табылмады.':'Әзірге студент жоқ.')+'</p>';
+  $('#regCount').textContent='Келді: '+here().length+' / '+D.students.length;
+}
+
+/* --- қатысым --- */
+function pcHTML(s){
+  const p=partOf(s);
+  const tip=s.ev.slice(-6).map(e=>(e.p>0?'+':'')+fmt(e.p)+' '+e.l).join(', ');
+  return `<div class="pc" data-id="${s.id}" title="${esc(tip)}"><div class="pc-top"><span class="pc-name">${esc(s.name)}</span><span class="pc-pts"><b>${fmt(p)}</b>/${MAXP}</span></div><div class="meter"><i style="width:${p/MAXP*100}%"></i></div><div class="pc-btns">${[1,2,3,-1].map(v=>`<button type="button" data-a="act" data-id="${s.id}" data-p="${v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div></div>`;
+}
+function partHTML(){
+  const hs=here().filter(vis);
+  return `<div class="row" style="margin-bottom:12px"><button class="btn ghost" data-a="allp">Барлық келгенге +1</button><span class="hint">Белсенділік үшін +1, +2, +3 басыңыз. Қате болса −1 немесе «Болдырмау». Қатысым ең көбі ${MAXP} балл.</span></div><div class="pgrid">${hs.map(pcHTML).join('')||'<p class="hint">Келген студент жоқ. «Тіркеу» бөлімінен қосыңыз.</p>'}</div>`;
+}
+function updPc(s){const el=$('.pc[data-id="'+s.id+'"]',gbBody);if(el)el.outerHTML=pcHTML(s);}
+
+/* --- тапсырмалар --- */
+function taskRow(s){
+  const t=taskI,p=PRAC[t];const sum=(s.rub[t]||[]).reduce((a,v)=>a+(+v||0),0);
+  const note=s.here?'':'<em>келмеді</em>';
+  const finNote=s.fin!=null?`<em>қорытынды: ${fmt(s.fin)}</em>`:'';
+  return `<tr data-id="${s.id}" class="${s.here?'':'abs'}"><td class="nm">${esc(s.name)}${note}${finNote}</td>${p.rub.map((r,c)=>{const v=(s.rub[t]||[])[c];return `<td><input class="gi" type="number" inputmode="decimal" min="0" max="${r[1]}" step="0.5" data-id="${s.id}" data-c="${c}" value="${v==null?'':v}" aria-label="${esc(s.name)}: ${esc(r[0])}"></td>`;}).join('')}<td><input class="gi tot" type="number" inputmode="decimal" min="0" max="${TOT[t]}" step="0.5" data-id="${s.id}" data-c="tot" placeholder="${fmt(sum)}" value="${s.tot[t]==null?'':s.tot[t]}" aria-label="${esc(s.name)}: жалпы"></td><td class="tb"><button type="button" class="mini" data-a="full" data-id="${s.id}">Толық</button> <button type="button" class="mini" data-a="clr" data-id="${s.id}" title="Тазалау">×</button></td></tr>`;
+}
+function finRow(s){
+  const auto=autoSum(s);
+  return `<tr data-id="${s.id}" class="${s.here?'':'abs'}"><td class="nm">${esc(s.name)}${s.here?'':'<em>келмеді</em>'}</td><td style="font-family:var(--font-mono)">${fmt(auto)}</td><td><input class="gi tot" type="number" inputmode="decimal" min="0" max="${MAXT}" step="0.5" data-id="${s.id}" data-c="fin" placeholder="${fmt(auto)}" value="${s.fin==null?'':s.fin}" aria-label="${esc(s.name)}: қорытынды балл"></td><td class="tb"><button type="button" class="mini" data-a="clrfin" data-id="${s.id}" title="Тазалау">×</button></td></tr>`;
+}
+function taskHTML(){
+  const crit=D.mode!=='final';const L=D.students.filter(vis);
+  let head,rows;
+  if(crit){
+    const p=PRAC[taskI];
+    head=`<tr><th>Студент</th>${p.rub.map(r=>`<th title="${esc(r[0])}"><span class="th-l">${esc(r[0])}</span><b>/${r[1]}</b></th>`).join('')}<th>Жалпы<b>/${TOT[taskI]}</b></th><th></th></tr>`;
+    rows=L.map(taskRow).join('');
+  }else{
+    head=`<tr><th>Студент</th><th>Критерий қосындысы<b>auto</b></th><th>Тапсырма балы<b>/${MAXT}</b></th><th></th></tr>`;
+    rows=L.map(finRow).join('');
+  }
+  return `<div class="row" style="margin-bottom:10px;justify-content:space-between">
+    <div class="seg" role="group" aria-label="Бағалау тәсілі"><button type="button" data-a="mode" data-m="crit" aria-pressed="${crit}">Әр тапсырма бойынша (критерий)</button><button type="button" data-a="mode" data-m="final" aria-pressed="${!crit}">Соңында бір балл (60)</button></div>
+    ${crit?`<div class="tabs" role="tablist">${PRAC.map((p,i)=>`<button type="button" class="tab" role="tab" aria-selected="${i===taskI}" data-a="tt" data-i="${i}">${i+1} · ${p.tab.split(' · ')[1]} · ${TOT[i]}</button>`).join('')}</div>`:''}
+  </div>
+  <p class="hint" style="margin-bottom:10px">${crit?'Критерийге балл жазып Enter басыңыз: келесі студентке өтеді. «Толық» батырмасы бәріне максимум қояды. «Жалпы» ұяшығына тікелей балл жазуға да болады. Қорытынды балл қойылса, ол басым болады.':'Сабақ соңында әр студентке тапсырма үшін бір жалпы балл (0–'+MAXT+') қойыңыз. Ол критерийлердің қосындысынан басым болады. Enter: келесі студент.'}</p>
+  <div class="gt-wrap"><table class="gt"><thead>${head}</thead><tbody>${rows||'<tr><td colspan="9" class="hint" style="padding:18px">Студент жоқ. Алдымен «Тіркеу» бөлімінен қосыңыз.</td></tr>'}</tbody></table></div>`;
+}
+function onGrade(t){
+  const s=find(+t.dataset.id);if(!s)return;const c=t.dataset.c;let v=num(t.value);const max=+t.max;
+  if(v!=null){if(v<0){v=0;t.value='0';}if(v>max){v=max;t.value=String(max);}}
+  if(c==='fin')s.fin=v;
+  else if(c==='tot')s.tot[taskI]=v;
+  else{if(!s.rub[taskI])s.rub[taskI]=[];s.rub[taskI][+c]=v;}
+  persist();
+  if(c!=='tot'&&c!=='fin'){
+    const tr=t.closest('tr');const tt=tr&&tr.querySelector('[data-c="tot"]');
+    if(tt)tt.placeholder=fmt((s.rub[taskI]||[]).reduce((a,x)=>a+(+x||0),0));
+  }
+}
+
+/* --- параметрлер --- */
+function setHTML(){
+  return `<div class="set-grid">
+  <div class="card stack-col"><h3>Балл параметрлері</h3>
+    <label class="srow"><span>Тіркелгені үшін (сабаққа келді)</span><input class="inp sm" type="number" step="0.5" min="0" max="40" data-cfg="att" value="${D.cfg.att}"></label>
+    <label class="srow"><span>Дұрыс жауап (тест, ойын)</span><input class="inp sm" type="number" step="0.5" min="0" max="40" data-cfg="ok" value="${D.cfg.ok}"></label>
+    <label class="srow"><span>Жартылай дұрыс жауап</span><input class="inp sm" type="number" step="0.5" min="0" max="40" data-cfg="half" value="${D.cfg.half}"></label>
+    <p class="hint">Қатысымның жалпы шегі ${MAXP} балл. Қалғанын «Қатысым» бөлімінде +1, +2, +3 арқылы қосасыз.</p>
+  </div>
+  <div class="card"><h3>Баға шкаласы (100 балдық)</h3>
+    <table class="gscale" style="margin-top:8px"><thead><tr><th>Баға</th><th>Балл</th><th>GPA</th></tr></thead><tbody>${GRADES.map((g,i)=>`<tr><td><b>${g[1]}</b></td><td>${g[0]}${i===0?'–100':'–'+(GRADES[i-1][0]-1)}</td><td>${g[2]}</td></tr>`).join('').replace(/<td>0–/,'<td>0–')}</tbody></table>
+  </div>
+  <div class="card stack-col"><h3>Деректер</h3>
+    <p class="hint">Журнал осы браузерде автоматты сақталады. Сабақ соңында CSV жүктеп алыңыз.</p>
+    <button type="button" class="danger" data-a="clrscores">Баллдарды тазалау (тізім қалады)</button>
+    <button type="button" class="danger" data-a="clrall">Бәрін тазалау (жаңа сабақ)</button>
+  </div></div>`;
+}
+
+/* --- CSV --- */
+function csv(){
+  const q2=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=[['№','Аты-жөні','Келді','Қатысым /40',...PRAC.map((p,i)=>'Т'+(i+1)+' '+p.tab.split(' · ')[1]+' /'+TOT[i]),'Тапсырма /60','Барлығы /100','Баға']];
+  D.students.forEach((s,i)=>{const tot=totalOf(s);rows.push([i+1,s.name,s.here?'иә':'жоқ',fmt(partOf(s)),...PRAC.map((_,t)=>s.fin!=null?'':fmt(taskOf(s,t))),fmt(tasksOf(s)),fmt(tot),gradeOf(tot)[1]]);});
+  const blob=new Blob(['﻿'+rows.map(r=>r.map(q2).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='surface-ball-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast('CSV жүктелді');
+}
+
+/* --- журнал оқиғалары --- */
+gbBody.addEventListener('click',e=>{
+  const a=e.target.closest('[data-a]');if(!a)return;
+  const act=a.dataset.a,id=+a.dataset.id,s=find(id);
+  switch(act){
+    case 'regadd':{
+      const inp=$('#regName');const r=addStudent(inp.value,true);
+      if(!r){toast('Аты-жөнін жазыңыз');inp.focus();break;}
+      persist();regChips();inp.value='';inp.focus();
+      toast(r.dup?r.s.name+': белгіленді':r.s.name+': келді, +'+fmt(D.cfg.att)+' балл');break;}
+    case 'regimport':{
+      const lines=$('#regList').value.split(/\r?\n/).map(l=>l.replace(/^\s*\d+[.)]?\s+/,'').trim()).filter(Boolean);
+      let n=0;lines.forEach(l=>{const r=addStudent(l,false);if(r&&!r.dup)n++;});
+      persist();regChips();$('#regList').value='';toast(n+' студент қосылды');break;}
+    case 'regall':here().length<D.students.length&&D.students.forEach(x=>{if(!x.here)setHere(x,true);});persist();regChips();break;
+    case 'here':if(s){setHere(s,!s.here);persist();regChips();}break;
+    case 'del':
+      e.stopPropagation();
+      if(delArm===id){D.students=D.students.filter(x=>x.id!==id);W.asked.delete(id);delArm=0;persist();regChips();}
+      else{delArm=id;regChips();setTimeout(()=>{if(delArm===id){delArm=0;regChips();}},3500);}
+      break;
+    case 'act':if(s){const p=+a.dataset.p;addEv(s,'act',p,'Белсенділік');persist();updPc(s);}break;
+    case 'allp':here().forEach(x=>addEv(x,'act',1,'Белсенділік'));persist();renderTab();toast('Барлығына +1');break;
+    case 'mode':D.mode=a.dataset.m;persist();renderTab();break;
+    case 'tt':taskI=+a.dataset.i;renderTab();break;
+    case 'full':if(s){s.rub[taskI]=PRAC[taskI].rub.map(r=>r[1]);s.tot[taskI]=null;persist();const tr=a.closest('tr');tr.outerHTML=taskRow(s);}break;
+    case 'clr':if(s){s.rub[taskI]=[];s.tot[taskI]=null;persist();const tr=a.closest('tr');tr.outerHTML=taskRow(s);}break;
+    case 'clrfin':if(s){s.fin=null;persist();const tr=a.closest('tr');tr.outerHTML=finRow(s);}break;
+    case 'clrscores':confirm2(a,()=>{D.students.forEach(x=>{x.ev=[];x.rub=[[],[],[]];x.tot=[null,null,null];x.fin=null;if(x.here)setHere(x,true);});undo.length=0;W.asked.clear();W.cur=null;persist();toast('Баллдар тазаланды');});break;
+    case 'clrall':confirm2(a,()=>{D.students=[];D.seq=1;undo.length=0;W.asked.clear();W.cur=null;persist();renderTab();toast('Журнал тазаланды');});break;
+  }
+});
+gbBody.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.classList.contains('gi'))onGrade(t);
+  else if(t.dataset.cfg){
+    const v=clamp(num(t.value)??0,0,40);D.cfg[t.dataset.cfg]=v;
+    if(t.dataset.cfg==='att')D.students.forEach(x=>{if(x.here)setHere(x,true);});
+    persist();paintBtns();
+  }
+});
+gbBody.addEventListener('keydown',e=>{
+  const t=e.target;
+  if(e.key==='Enter'&&t.id==='regName'){e.preventDefault();const b=$('[data-a="regadd"]',gbBody);if(b)b.click();return;}
+  if(e.key==='Enter'&&t.classList&&t.classList.contains('gi')){
+    e.preventDefault();
+    const cells=$$('.gi[data-c="'+t.dataset.c+'"]',gbBody);const i=cells.indexOf(t);const nx=cells[i+1]||cells[i];nx.focus();try{nx.select();}catch(_){}
+  }
+});
+$('#gbTabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;renderGbTabs();renderTab();});
+$('#gbSearch').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();renderTab();});
+$('#gbUndo').addEventListener('click',()=>{
+  const u=undo.pop();if(!u){toast('Болдыратын әрекет жоқ');return;}
+  const s=find(u.id);if(!s)return;const i=s.ev.indexOf(u.ev);if(i>=0)s.ev.splice(i,1);
+  persist();renderTab();toast('Болдырылмады: '+s.name+' '+(u.ev.p>0?'+':'')+fmt(u.ev.p));
+});
+$('#gbCsv').addEventListener('click',csv);
+$('#gbClose').addEventListener('click',closeGb);
+$('#gbBoard').addEventListener('click',openBoard);
+gb.addEventListener('mousedown',e=>{if(e.target===gb)closeGb();});
+$('#gbBtn').addEventListener('click',()=>gb.hidden?openGb():closeGb());
+$('#bdBtn').addEventListener('click',()=>board.hidden?openBoard():closeBoard());
+$('#bdClose').addEventListener('click',closeBoard);
+$('#bdJ').addEventListener('click',()=>openGb());
+
+/* ====================  ТАҚТАДАҒЫ КЕСТЕ  ==================== */
+function renderBoard(){
+  if(board.hidden)return;
+  const L=$('#bdList');
+  const list=D.students.slice().sort((a,b)=>totalOf(b)-totalOf(a)||a.name.localeCompare(b.name,'kk'));
+  const n=list.length;
+  const old=new Map($$('.bd-row',L).map(e=>[e.dataset.id,e.getBoundingClientRect()]));
+  const avg=n?list.reduce((a,s)=>a+totalOf(s),0)/n:0;
+  const best=list[0];
+  $('#bdSum').innerHTML=`<span class="chip">Келді: ${here().length} / ${n}</span><span class="chip">Орташа: ${fmt(avg)}</span>`+(best&&totalOf(best)>0?`<span class="chip">Алда: ${esc(best.name)} · ${fmt(totalOf(best))}</span>`:'');
+  $('#bdGrades').textContent=GRADES.map(g=>g[1]+' '+g[0]+'+').join(' · ');
+  if(!n){L.className='bd-list';L.style.gridTemplateColumns='';L.style.gridTemplateRows='';L.innerHTML='<div class="bd-empty">Студенттер әлі тіркелмеген. Журнал → Тіркеу.</div>';return;}
+  const used=$('.bd-head',board).offsetHeight+$('.bd-foot',board).offsetHeight+30;
+  const avail=innerHeight-used;
+  const cols=n>26?3:n>13?2:1,per=Math.ceil(n/cols);
+  const rh=clamp((avail-(per-1)*8)/per,30,64);
+  L.className='bd-list'+(cols===3?' d3':'');
+  L.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';
+  L.style.gridTemplateRows='repeat('+per+','+rh+'px)';
+  L.style.setProperty('--rh',rh+'px');
+  const first=old.size===0;
+  L.innerHTML=list.map((s,i)=>{
+    const pt=partOf(s),tk=tasksOf(s),tot=totalOf(s);
+    return `<div class="bd-row${i<3&&tot>0?' top'+(i+1):''}" data-id="${s.id}"><span class="bd-rk">${i+1}</span><span class="bd-nm">${esc(s.name)}${s.here?'':'<em>келмеді</em>'}</span><span class="bd-m part"><i data-w="${pt/MAXP*100}" style="width:${first?0:pt/MAXP*100}%"></i><b>${fmt(pt)}</b></span><span class="bd-m task"><i data-w="${tk/MAXT*100}" style="width:${first?0:tk/MAXT*100}%"></i><b>${fmt(tk)}</b></span><span class="bd-tot">${fmt(tot)}</span><span class="bd-gr">${gradeOf(tot)[1]}</span></div>`;
+  }).join('');
+  if(first){requestAnimationFrame(()=>requestAnimationFrame(()=>{$$('.bd-m i',L).forEach(i=>{i.style.width=i.dataset.w+'%';});}));}
+  if(!reduce&&!first){
+    $$('.bd-row',L).forEach(el=>{
+      const o=old.get(el.dataset.id);if(!o)return;const nw=el.getBoundingClientRect();
+      const dx=o.left-nw.left,dy=o.top-nw.top;if(!dx&&!dy)return;
+      el.style.transition='none';el.style.transform='translate('+dx+'px,'+dy+'px)';
+    });
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{$$('.bd-row',L).forEach(el=>{el.style.transition='transform .7s cubic-bezier(.2,.8,.2,1)';el.style.transform='';});}));
+  }
+}
+function refreshAll(){paintHdr();renderBoard();paintPool();}
+addEventListener('resize',()=>{renderBoard();if(!WB.hidden)drawWheel();});
+
+/* ====================  ДӨҢГЕЛЕК  ==================== */
+const WB=$('#wheelbox'),CV=$('#whCv');
+const W={ang:0,spin:false,asked:new Set(),cur:null,hi:-1,items:[],noRep:true,auto:false,closed:{},newRound:false,note:null};
+const PAL=['#0a7d5e','#b97800','#2f6fb5','#8a4fa8','#c13636','#2f8f9e'];
+const shortName=nm=>{const t=nm.split(' ');return t.length>1?t[0]+' '+t[1][0]+'.':nm;};
+function askCtx(){
+  if(cur===9)return{t:qi>=QUIZ.length?'Тест':'Тест · '+(qi+1)+'-сұрақ',ev:'Тест №'+(qi+1)};
+  if(cur===7)return{t:'Ойын · '+CASES[caseI].tab,ev:'Ойын №'+(caseI+1)};
+  return{t:'Қатысым · жалпы сұрақ',ev:'Жауап'};
+}
+function peek(){
+  const h=here();if(!W.noRep)return h;
+  const p=h.filter(s=>!W.asked.has(s.id));return p.length?p:h;
+}
+function pool(){
+  const h=here();if(!W.noRep)return h;
+  let p=h.filter(s=>!W.asked.has(s.id));
+  if(!p.length&&h.length){W.asked.clear();p=h.slice();W.newRound=true;}
+  return p;
+}
+function colorFor(i,n){let c=PAL[i%PAL.length];if(i===n-1&&n>1&&i%PAL.length===0)c='#5b7a2f';return c;}
+function drawWheel(){
+  const items=W.items,n=items.length;
+  const css=CV.getBoundingClientRect().width||300;const dpr=Math.min(devicePixelRatio||1,2);
+  const px=Math.round(css*dpr);if(CV.width!==px){CV.width=px;CV.height=px;}
+  const g=CV.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,css,css);
+  const cx=css/2,cy=css/2,R=css/2-8;
+  if(!n){
+    g.beginPath();g.arc(cx,cy,R,0,7);g.fillStyle='#8ea2b3';g.fill();g.fillStyle='#fff';g.font='600 15px Onest,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('Кірген студент жоқ',cx,cy);
+  }else{
+    const seg=2*Math.PI/n;
+    items.forEach((s,i)=>{
+      const a0=-Math.PI/2+W.ang+i*seg,a1=a0+seg,hi=i===W.hi;
+      g.beginPath();g.moveTo(cx,cy);g.arc(cx,cy,R,a0,a1);g.closePath();
+      g.fillStyle=hi?'#f2b84b':colorFor(i,n);g.fill();g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=n>40?1:2;g.stroke();
+      const arc=n===1?R:seg*R*.62;
+      if(arc>11){
+        g.save();g.translate(cx,cy);g.rotate(a0+seg/2);
+        const fs=Math.max(9,Math.min(14,arc*.62));g.font='600 '+fs+'px Onest,system-ui,sans-serif';g.textAlign='right';g.textBaseline='middle';g.fillStyle=hi?'#1d1500':'#fff';
+        const maxW=R-10-R*.17;let label=shortName(s.name);
+        if(g.measureText(label).width>maxW)label=s.name.split(' ')[0];
+        while(label.length>3&&g.measureText(label).width>maxW)label=label.slice(0,-2)+'…';
+        g.fillText(label,R-10,0);g.restore();
+      }
+    });
+    g.beginPath();g.arc(cx,cy,R*.13,0,7);g.fillStyle='#0f1b26';g.fill();g.strokeStyle='#fff';g.lineWidth=3;g.stroke();
+  }
+  g.beginPath();g.moveTo(cx-12,2);g.lineTo(cx+12,2);g.lineTo(cx,26);g.closePath();g.fillStyle='#fff';g.fill();g.strokeStyle='#0f1b26';g.lineWidth=2.5;g.stroke();
+}
+function randInt(n){const a=new Uint32Array(1);try{crypto.getRandomValues(a);}catch(e){a[0]=Math.random()*4294967296;}return Math.floor(a[0]/4294967296*n);}
+function spinWheel(){
+  if(W.spin)return;
+  const p=pool();
+  if(!p.length){toast('Сабаққа кірген студент әлі жоқ');return;}
+  if(W.newRound){toast('Жаңа айналым: барлық студент қайта қатысады');W.newRound=false;}
+  if(W.cur&&!W.cur.done)W.asked.delete(W.cur.id);
+  W.items=p.slice();W.hi=-1;W.cur=null;W.note=null;paintRes();
+  const n=p.length,seg=2*Math.PI/n,k=randInt(n),jit=(Math.random()-.5)*.6*seg;
+  const turns=reduce?0:4+Math.floor(Math.random()*3);
+  const delta=turns*2*Math.PI+mod2(-((k+.5)*seg+jit)-W.ang,2*Math.PI);
+  const from=W.ang,dur=reduce?400:4200+Math.random()*900,t0=performance.now();
+  W.spin=true;$('#whSpin').disabled=true;
+  const step=now=>{
+    const t=clamp((now-t0)/dur),e=1-Math.pow(1-t,4);
+    W.ang=from+delta*e;drawWheel();
+    if(t<1)requestAnimationFrame(step);else finishSpin(k);
+  };
+  requestAnimationFrame(step);
+}
+function finishSpin(k){
+  W.spin=false;W.ang=W.ang%(2*Math.PI);W.hi=k;
+  const s=W.items[k];W.asked.add(s.id);
+  W.cur={id:s.id,ev:askCtx().ev,done:false,miss:false};
+  $('#whSpin').disabled=false;drawWheel();paintRes(true);paintPool();
+}
+function paintRes(pop){
+  const c=W.cur,s=c&&find(c.id),nm=$('#whName');
+  nm.textContent=s?s.name:'—';
+  if(pop&&s){nm.classList.remove('pop');void nm.offsetWidth;nm.classList.add('pop');}
+  $$('.wh-btns button',WB).forEach(b=>{b.disabled=!c||c.done;});
+  const note=$('#whNote');
+  if(W.note){note.textContent=W.note.t;note.className='wh-note '+W.note.c;}
+  else if(c&&!c.done){note.textContent=cur===9||cur===7?'Жауап беруін өтініңіз. Жауап басылғанда балл автоматты қосылады.':'Жауабына қарай батырманы басыңыз.';note.className='wh-note';}
+  else{note.textContent='';note.className='wh-note';}
+}
+function setNote(t,c){W.note={t,c};paintRes();}
+function award(kind){
+  const c=W.cur;if(!c||c.done)return;const s=find(c.id);if(!s)return;
+  const p=kind==='ok'?+D.cfg.ok:kind==='half'?+D.cfg.half:0;
+  c.done=true;addEv(s,'ans',p,c.ev+(kind==='no'?' · қате':kind==='half'?' · жартылай':''));
+  persist();
+  setNote(kind==='no'?s.name+': 0 балл':s.name+': +'+fmt(p)+' балл',kind==='no'?'bad':'good');
+  toast(kind==='no'?s.name+': 0 балл':s.name+': +'+fmt(p)+' балл');
+}
+function paintBtns(){$('#whOk').textContent='+'+fmt(D.cfg.ok);$('#whHalf').textContent='+'+fmt(D.cfg.half);}
+function paintPool(){
+  const h=here().length;$('#whPool').textContent=h?'Қалған: '+(W.noRep?peek().length&&here().filter(s=>!W.asked.has(s.id)).length:h)+' / '+h:'Келген студент жоқ';
+  if(!W.spin&&!W.cur){W.items=peek();W.hi=-1;if(!WB.hidden)drawWheel();}
+}
+function showWheel(auto){
+  WB.hidden=false;W.auto=!!auto;$('#whBtn').setAttribute('aria-pressed','true');
+  document.body.classList.toggle('wheel-dock',cur===7||cur===9);
+  paintBtns();$('#whCtx').textContent=askCtx().t;paintPool();setTimeout(()=>{W.items=W.cur?W.items:peek();drawWheel();},30);
+}
+function hideWheel(){WB.hidden=true;W.auto=false;$('#whBtn').setAttribute('aria-pressed','false');document.body.classList.remove('wheel-dock');}
+function toggleWheel(){if(WB.hidden)showWheel(false);else{hideWheel();}}
+$('#whBtn').addEventListener('click',toggleWheel);
+$('#whClose').addEventListener('click',()=>{W.closed[cur]=true;hideWheel();});
+$('#whSpin').addEventListener('click',spinWheel);
+if(typeof DB!=='undefined'){
+  let offW=null,sidW=null;
+  DB.session.on(s=>{
+    if(!s||!s.sid||s.sid===sidW)return;sidW=s.sid;if(offW)offW();
+    offW=DB.runs.on(sidW,r=>{
+      LIVE_ST=r.filter(x=>x.joinedAt).map(x=>({id:x.id,name:x.name})).sort((a,b)=>a.name.localeCompare(b.name,'kk'));
+      if(!WB.hidden)paintPool();
+    });
+  });
+}
+CV.addEventListener('click',spinWheel);
+$('#whNoRep').addEventListener('change',e=>{W.noRep=e.target.checked;if(!W.noRep)W.asked.clear();paintPool();});
+WB.addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b&&!b.disabled)award(b.dataset.r);});
+
+/* ---- слайд пен тест/ойын байланысы ---- */
+const TQ={
+  refresh(){
+    if(W.cur&&W.cur.ev!==askCtx().ev){if(!W.cur.done)W.asked.delete(W.cur.id);W.cur=null;W.hi=-1;W.note=null;if(!W.spin)paintRes();paintPool();}
+    $('#whCtx').textContent=askCtx().t;
+  },
+  slide(i){
+    if(!isT())return;
+    const dock=i===7||i===9;
+    document.body.classList.toggle('wheel-dock',!WB.hidden&&dock);
+    if(dock){if(WB.hidden&&!W.closed[i]&&here().length)showWheel(true);}
+    else if(W.auto&&!WB.hidden)hideWheel();
+    $('#whCtx').textContent=askCtx().t;
+  },
+  answered(ok,final){
+    const c=W.cur;if(!c||c.done||W.spin)return;
+    if(!ok){
+      if(final)award('no');
+      else{c.miss=true;setNote('Қате жауап. Енді дұрысын тапса, жартылай балл қосылады.','bad');}
+      return;
+    }
+    award(c.miss?'half':'ok');
+  },
+  modal(e){
+    if(gb.hidden&&board.hidden)return false;
+    const k=e.key;
+    if(k==='Escape'){closeOverlays();return true;}
+    if(!board.hidden&&(k==='b'||k==='B'||k==='и'||k==='И')){const t=e.target;if(!(t&&t.tagName==='INPUT')){closeBoard();return true;}}
+    return true;
+  },
+  openGb(){if(!isT())return;gb.hidden?openGb():closeGb();},
+  openBoard(){if(!isT())return;board.hidden?openBoard():closeBoard();},
+  toggleWheel(){if(isT())toggleWheel();}
+};
+paintHdr();paintBtns();
+
+
+/* =====================  LIVE: студенттің кіруі және жіберуі  ===================== */
+const LIVE=(function(){
+  const ok=typeof DB!=='undefined'&&typeof APP!=='undefined';
+  const PRAC_SLIDE=8,LIMIT=30*60000;
+  let offRank=null,ranks=[],me=null,run=null,sess=null,offRun=null,clock=null,ticks=PRAC_ticks();
+  function PRAC_ticks(){return [[],[],[]];}
+  try{me=JSON.parse(sessionStorage.getItem('surface-me')||'null');}catch(e){}
+  const saveMe=()=>{try{me?sessionStorage.setItem('surface-me',JSON.stringify(me)):sessionStorage.removeItem('surface-me');}catch(e){}};
+  const rid=()=>me.sid+'_'+me.key;
+  const isStu=()=>ok&&me&&rootEl.dataset.role==='student';
+
+  function attach(){
+    if(offRun)offRun();
+    if(offRank)offRank();offRank=DB.runs.on(me.sid,r=>{ranks=r;paintRank();});
+    offRun=DB.run.on(rid(),r=>{run=r||{};ticksFromRun();if(cur===PRAC_SLIDE)paint();});
+  }
+  function ticksFromRun(){
+    for(let n=0;n<3;n++){const t=run&&run['t'+n];if(t&&t.c)ticks[n]=t.c.slice();}
+  }
+  async function login(code,name,group){
+    name=name.trim().replace(/\s+/g,' ');group=group.trim().replace(/\s+/g,' ');
+    if(!/^\d{4}$/.test(code.trim()))return 'Код 4 санды болуы керек.';
+    if(name.length<3)return 'Аты-жөніңізді толық жазыңыз.';
+    if(!group)return 'Тобыңызды жазыңыз.';
+    let s;try{s=await DB.session.get();}catch(e){return 'Байланыс жоқ. Интернетті тексеріңіз.';}
+    if(!s||!s.open)return 'Сабақ әлі басталған жоқ. Мұғалімнен күтіңіз.';
+    if(String(s.code)!==code.trim())return 'Код қате. Экрандағы кодты қайта қараңыз.';
+    me={sid:s.sid,name,group,key:APP.key(group,name)};
+    if(!me.key)return 'Аты-жөнінде әріп болуы керек.';
+    saveMe();try{localStorage.setItem('surface-last',JSON.stringify({name,group}));}catch(e){}
+    ticks=PRAC_ticks();run=null;
+    const ex=await DB.run.get(rid());
+    const o={};
+    if(!ex||!ex.joinedAt)Object.assign(o,{sid:me.sid,name,group,key:me.key,joinedAt:Date.now()});
+    if(!ex||ex.part==null)o.part=APP.PART_MAX;   // кірген бойда қатысым 30 балл
+    if(Object.keys(o).length)await DB.run.patch(rid(),o);
+    attach();return '';
+  }
+  function logout(){
+    if(offRank){offRank();offRank=null;}ranks=[];paintRank();
+    me=null;run=null;ticks=PRAC_ticks();saveMe();if(offRun){offRun();offRun=null;}clearInterval(clock);
+  }
+  function last(){try{return JSON.parse(localStorage.getItem('surface-last')||'null');}catch(e){return null;}}
+  /* қолданбасы басталғанда: сессия ауысқан болса, қайта кіргізу */
+  function verify(onBad){
+    if(!ok||!me)return;
+    DB.session.get().then(s=>{if(!s||s.sid!==me.sid){logout();onBad();}else attach();}).catch(()=>attach());
+  }
+
+  function patchT(n,o){return DB.run.patch(rid(),{['t'+n]:o});}
+  function startedAt(){return run&&run.startedAt;}
+  function slide(i){
+    clearInterval(clock);
+    if(!isStu())return;
+    if(i===PRAC_SLIDE){
+      if(run&&!run.startedAt)DB.run.patch(rid(),{startedAt:Date.now()});
+      clock=setInterval(tick,1000);tick();
+    }
+  }
+  function tick(){
+    const el=$('#liveClock');if(!el)return;const t=(run&&run['t'+curP])||{};if(!t.s){el.textContent='';return;}
+    const d=((t.st==='called'||t.st==='done')&&t.at?t.at:Date.now())-t.s,a=Math.max(0,Math.floor(d/1000)),bud=APP.TASKS[curP].budget;
+    el.textContent='⏱ '+String(Math.floor(a/60)).padStart(2,'0')+':'+String(a%60).padStart(2,'0')+' / '+bud+' мин';
+    el.classList.toggle('over',d>bud*60000);
+  }
+
+  /* рейтинг: студент өз экранынан көреді */
+  function paintRank(){
+    let b=document.getElementById('rankBtn'),p=document.getElementById('rankBox');
+    if(!isStu()){if(b)b.hidden=true;if(p)p.hidden=true;return;}
+    if(!b){
+      b=document.createElement('button');b.id='rankBtn';b.type='button';b.className='pill';b.textContent='🏆 Рейтинг';
+      p=document.createElement('aside');p.id='rankBox';p.hidden=true;
+      b.onclick=()=>{p.hidden=!p.hidden;};
+      const tl=document.querySelector('.tools'),th=document.getElementById('themeBtn');
+      if(tl&&th)tl.insertBefore(b,th);else document.body.appendChild(b);document.body.appendChild(p);
+    }
+    b.hidden=false;
+    const list=ranks.filter(r=>r.joinedAt).map(r=>({n:r.name,g:r.group,t:APP.total(r),me:me&&r.key===me.key})).sort((a,c)=>c.t-a.t||a.n.localeCompare(c.n,'kk'));
+    p.innerHTML='<div class="rk-h"><b>Рейтинг</b><span>'+list.length+' студент</span></div>'+(list.map((x,i)=>`<div class="rk${x.me?' me':''}"><i>${i+1}</i><span>${esc(x.n)}</span><b>${x.t}</b></div>`).join('')||'<div class="rk">Әзірге ешкім жоқ</div>');
+  }
+
+  let curP=0;
+  function prac(n,p){curP=n;if(!isStu())return;paint();}
+  function paint(){
+    if(!isStu())return;
+    const n=curP,p=PRAC[n],box=$('#pracRub');if(!box)return;
+    const t=(run&&run['t'+n])||{},st=t.st||'working',locked=st==='called'||st==='done';
+    const started=!!t.s,pr=document.querySelector('.prac');if(pr)pr.classList.toggle('prelock',!started);
+    box.parentNode.hidden=!started;$('#pracTip').hidden=!started;$('#pracList').closest('.stack-col').hidden=!started;
+    const mark=st==='done'&&t.app?t.app:ticks[n];
+    const rows=p.rub.map((r,k)=>`<label class="rrow${st==='done'?(t.app&&t.app[k]?' yes':' no'):''}"><input type="checkbox" data-k="${k}"${mark&&mark[k]?' checked':''}${locked?' disabled':''}><span>${r[0]}</span><b>${r[1]}</b></label>`).join('');
+    const tot=p.rub.reduce((a,r)=>a+r[1],0);
+    const sum=APP.sum(run);
+    let msg='';
+    if(st==='called')msg='<div class="st call">⏳ Мұғалім шақырылды. Орныңызда отырыңыз, мұғалім келіп 3ds Max-та тексереді.</div><div class="row"><button type="button" class="btn ghost" id="lvBack">Қайтарып алу</button></div>';
+    else if(st==='done')msg=`<div class="st done">✅ Мақұлданды: ${t.score} / ${tot} балл${t.pct!=null&&t.pct<100?` · мұғалім тексеруі: ${t.pct}%`:''}</div>`;
+    else if(!started)msg='<div class="st">Дайын болғанда басыңыз: тапсырма мен таймер басталады.</div><div class="row"><button type="button" class="btn" id="lvStart">Тапсырманы бастау</button></div>';
+    else msg=(t.note?`<div class="st bad">Мұғалім қайтарды: ${esc(t.note)}</div>`:'<div class="st">Орындаған критерийлерді белгілеңіз, сосын жіберіңіз.</div>')+'<div class="row"><button type="button" class="btn" id="lvSend">Тапсырманы жіберу · мұғалімді шақыру</button></div><div class="st bad" id="lvErr" role="alert"></div>';
+    box.innerHTML=!started?'':rows+`<div class="tot"><span>Барлық тапсырма: ${tot} балл</span><b>${tot}</b></div>`;
+    let lb=$('#liveBox');if(!lb){lb=document.createElement('div');lb.id='liveBox';$('#pracGoal').closest('.card').after(lb);}
+    lb.innerHTML=`<div class="livebox"><div class="row"><span class="chip">${esc(me.name)} · ${esc(me.group)}</span><span class="clock" id="liveClock"></span></div>${msg}<div class="sum">Менің тапсырма баллым: <b>${sum}</b> / 60</div></div>`;
+    tick();
+  }
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  document.addEventListener('change',e=>{
+    const i=e.target.closest&&e.target.closest('#pracRub input[data-k]');if(!i||!isStu())return;
+    const k=+i.dataset.k;ticks[curP][k]=i.checked;
+    const n=PRAC[curP].rub.length;const c=[];for(let j=0;j<n;j++)c.push(!!ticks[curP][j]);
+    patchT(curP,{c});
+  });
+  document.addEventListener('click',async e=>{
+    if(!isStu())return;
+    if(e.target.id==='lvStart'){patchT(curP,{s:Date.now(),st:'working'});return;}
+    if(e.target.id==='lvBack'){patchT(curP,{st:'working'});return;}
+    if(e.target.id!=='lvSend')return;
+    const n=curP,len=PRAC[n].rub.length,c=[];for(let j=0;j<len;j++)c.push(!!ticks[n][j]);
+    const er=$('#lvErr');
+    if(!c.some(Boolean)){er.textContent='Кемінде бір критерийді белгілеңіз.';return;}
+    e.target.disabled=true;
+    try{
+      const s=await DB.session.get();
+      if(!s||s.sid!==me.sid){er.textContent='Жаңа сабақ басталды. Бетті жаңартып, қайта кіріңіз.';e.target.disabled=false;return;}
+      if(!s.open){er.textContent='Сабақ аяқталды, жіберу жабық. Мұғалімге айтыңыз.';e.target.disabled=false;return;}
+      const now=Date.now(),st=startedAt()||now,prev=(run&&run['t'+n]&&run['t'+n].s)||st;
+      await patchT(n,{c,st:'called',at:now,el:+((now-prev)/60000).toFixed(1),min:+((now-st)/60000).toFixed(1),note:''});
+    }catch(x){er.textContent='Жіберілмеді. Интернетті тексеріп қайта басыңыз.';e.target.disabled=false;}
+  });
+
+  attachInit();
+  function attachInit(){if(ok&&me)attach();}
+  function test(v){if(!isStu()||!run)return;if(run.test==null||v>run.test)DB.run.patch(rid(),{test:v});}
+  return {rank:paintRank,test,on:()=>ok,me:()=>me,login,logout,verify,last,slide,prac,demo:()=>ok&&DB.mode==='demo'};
+})();
+
+/* Журнал: слайд бетінің ішінде қабат ретінде ашылады */
+(function(){
+  const a=document.getElementById('liveLink');if(!a)return;let o=null;
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    if(!o){
+      o=document.createElement('div');o.id='liveOvl';
+      o.innerHTML='<div class="lo-bar"><button type="button" class="pill" id="loBack">← Слайдқа оралу</button><b>Журнал</b></div><iframe src="teacher.html?embed=1" title="Журнал"></iframe>';
+      document.body.appendChild(o);o.querySelector('#loBack').onclick=()=>{o.hidden=true;};
+    }
+    o.hidden=false;
+  });
+})();
+
+/* =====================  КІРУ: рөл таңдау және курстар  ===================== */
+const GATE=$('#gate'),rootEl=document.documentElement;
+const LESSONS=[
+ ['1','Компьютерлік графика және 3D негіздері. 3ds Max жұмыс ортасы'],
+ ['2','Графиктік деректерді сипаттау. Примитивтерді құру'],
+ ['3','3D нысанының қаңқалық-тор құрылымын өңдеу'],
+ ['4','Интерфейс және проекция терезелері. Төбелерді, беттерді және көпбұрышты беттерді өңдеу'],
+ ['5–6','Сплайндар негізінде 3D нысандарын әзірлеу'],
+ ['7–8','Surface модификаторын пайдаланып бетті жасау',true],
+ ['9','NURBS-беттерді біріктіру операцияларын қолдану'],
+ ['10','Патчворкты модельдеу негіздері'],
+ ['11','Түрлендіргіштер. Құрамдас нысандар және лофтинг'],
+ ['12','Проекцияның үш терезесі бойынша объектінің құрылысы. Рельефті құру'],
+ ['13','Жарық көздерін орналастыру және 3D-сахнаны жарықтандыру принциптері'],
+ ['14','3D нысандарының беттеріндегі текстураларды қабаттастыру'],
+ ['15','3D нысандарын визуализациялау']
+];
+let role='none',deepPending=/^#s\d+$/.test(location.hash||'');
+try{const r=sessionStorage.getItem('surface-role');if(r==='student'||r==='teacher')role=r;}catch(e){}
+
+function applyRole(r,save){
+  let me;role=r;rootEl.dataset.role=r;
+  if(save!==false){try{r==='none'?sessionStorage.removeItem('surface-role'):sessionStorage.setItem('surface-role',r);}catch(e){}}
+  if(r!=='teacher'){closeOverlays();hideWheel();const n=$('#notes');if(n)n.hidden=true;}
+  paintHdr();
+  const chip=$('#gtRole');chip.hidden=r==='none';chip.textContent=r==='teacher'?'Мұғалім':'Студент';
+  $('#gtSwitch').hidden=r==='none';
+  if(r==='none')LIVE.logout();
+  LIVE.rank();
+  if(me=LIVE.me(),me&&r==='student')chip.textContent='Студент · '+me.name;
+  if(r!=='teacher'&&cur>=0)resetSteps(cur,true);
+}
+function showScreen(w){
+  $('#gtRoles').hidden=w!=='roles';$('#gtCourses').hidden=w!=='courses';$('#gtLogin').hidden=w!=='login';
+  if(w==='roles'){$('#gtPw').hidden=true;$('.gt-roles',GATE).hidden=false;$('#gtPwErr').textContent='';}
+  GATE.scrollTop=0;
+  if(w==='courses')setTimeout(focusOpen,60);
+}
+function focusOpen(){
+  const c=$('.lesson.open',GATE);if(!c||GATE.hidden)return;
+  const top=c.offsetTop-Math.max(80,(GATE.clientHeight-c.offsetHeight)/2-40);
+  if(top>40)GATE.scrollTo({top,behavior:reduce?'auto':'smooth'});
+}
+function openGate(w,keepHash){
+  closeMenu();GATE.hidden=false;showScreen(w);
+  if(!keepHash){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
+  setTimeout(()=>{const f=w==='roles'?$('.role',GATE):$('.lesson.open .btn',GATE);if(f)f.focus({preventScroll:true});},40);
+}
+function closeGate(){
+  GATE.hidden=true;
+  try{if(cur>=0)history.replaceState(null,'','#s'+(cur+1));}catch(e){}
+  setTimeout(()=>{VPS.forEach(v=>v.resize());},60);
+}
+function renderLessons(){
+  $('#gtStat').innerHTML='<span class="chip">Ашық: 1 / '+LESSONS.length+'</span><span class="chip">Қалған сабақтар жақында ашылады</span><button type="button" class="chip" id="gtJump" style="cursor:pointer;border-color:var(--accent);color:var(--accent)">Ашық сабаққа өту ↓</button>';
+  $('#gtList').innerHTML=LESSONS.map(l=>l[2]
+    ?`<article class="lesson open"><span class="ln">${l[0]}</span><div><h3>${l[1]}</h3><p>50 минуттық сабақ: анимация, зертхана, «Қатені тап» ойыны, практика, тест</p><div class="tags"><span class="chip">Surface</span><span class="chip">Steps</span><span class="chip">Flip Normals</span><span class="chip">Shell</span></div></div><div class="act"><button type="button" class="btn" data-open="1">Сабақты ашу →</button></div></article>`
+    :`<article class="lesson locked" aria-disabled="true"><span class="ln">${l[0]}</span><div><h3>${l[1]}</h3><p>Әзірге жабық</p></div><span class="lk act"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Жабық</span></article>`
+  ).join('');
+}
+function afterRole(){
+  if(deepPending){deepPending=false;closeGate();}
+  else openGate('courses',true);
+}
+$('.gt-roles',GATE).addEventListener('click',e=>{
+  const b=e.target.closest('.role');if(!b)return;
+  if(b.dataset.role==='student'){
+    if(!LIVE.on()){applyRole('student');afterRole();return;}
+    $('#lgDemo').hidden=!LIVE.demo();$('#lgErr').textContent='';showScreen('login');fillRoster();setTimeout(()=>$('#lgCode').focus(),40);
+  }
+  else{applyRole('teacher');afterRole();}
+});
+const LAT_KEYS="qwertyuiop[]asdfghjkl;'zxcvbnm,.",CYR_KEYS='йцукенгшщзхъфывапролджэячсмитьбю';
+const normPw=s=>s.trim().toLowerCase().split('').map(c=>{const i=CYR_KEYS.indexOf(c);return i>=0?LAT_KEYS[i]:c;}).join('');
+function tryPw(){
+  if(normPw($('#gtPwIn').value)===normPw(String((window.APP_CONFIG&&APP_CONFIG.teacherPassword)||'surface7'))){applyRole('teacher');afterRole();}
+  else{
+    $('#gtPwErr').textContent='Құпиясөз қате. Қайта көріңіз.';
+    const f=$('#gtPw');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake');$('#gtPwIn').select();
+  }
+}
+let ROSTER=[];
+async function fillRoster(){
+  const g=$('#lgGroup');g.innerHTML='<option value="">Жүктелуде…</option>';
+  try{const s=await DB.session.get();ROSTER=(s&&Array.isArray(s.roster))?s.roster:[];}catch(e){ROSTER=[];}
+  const groups=[...new Set(ROSTER.map(x=>x.g))].sort();
+  if(!groups.length){g.innerHTML='<option value="">Тізім жоқ</option>';$('#lgName').innerHTML='';$('#lgErr').textContent='Мұғалім әлі студенттер тізімін енгізген жоқ.';return;}
+  const l=LIVE.last();
+  g.innerHTML=groups.map(x=>`<option${l&&l.group===x?' selected':''}>${x}</option>`).join('');
+  fillNames(l&&l.group===g.value?l.name:'');
+}
+function fillNames(sel){
+  const g=$('#lgGroup').value;
+  $('#lgName').innerHTML=ROSTER.filter(x=>x.g===g).map(x=>x.n).sort((a,b)=>a.localeCompare(b,'kk')).map(n=>`<option${n===sel?' selected':''}>${n}</option>`).join('');
+}
+$('#lgGroup').addEventListener('change',()=>fillNames(''));
+async function tryLogin(){
+  const b=$('#lgGo');b.disabled=true;
+  const er=await LIVE.login($('#lgCode').value,$('#lgName').value,$('#lgGroup').value);
+  b.disabled=false;
+  if(er){$('#lgErr').textContent=er;const f=$('#lgBox');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake');return;}
+  applyRole('student');afterRole();
+}
+$('#lgGo').addEventListener('click',tryLogin);
+['#lgCode'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tryLogin();}}));
+$('#lgCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+$('#lgBack').addEventListener('click',()=>showScreen('roles'));
+$('#gtList').addEventListener('click',e=>{if(e.target.closest('[data-open]'))closeGate();});
+$('#gtStat').addEventListener('click',e=>{if(e.target.closest('#gtJump'))focusOpen();});
+$('#gtSwitch').addEventListener('click',()=>{applyRole('none');openGate('roles');});
+$('#gtTheme').addEventListener('click',()=>$('#themeBtn').click());
+
+/* мәзірге: курстарға оралу, рөлді ауыстыру */
+(function(){
+  const box=document.createElement('div');box.className='menu-extra';
+  box.innerHTML='<button type="button" class="mi" data-x="courses"><span class="n">⌂</span><span class="t">Курстарға оралу</span><span class="ph">Басты бет</span></button><button type="button" class="mi" data-x="role"><span class="n">⇄</span><span class="t">Рөлді ауыстыру</span><span class="ph" id="menuRoleTag"></span></button>';
+  $('#menu').insertBefore(box,$('#menuList'));
+  box.addEventListener('click',e=>{
+    const b=e.target.closest('[data-x]');if(!b)return;
+    if(b.dataset.x==='courses')openGate('courses');
+    else{applyRole('none');openGate('roles');}
+  });
+})();
+
+if(role==='student'&&LIVE.on()&&!LIVE.me())role='none';
+renderLessons();
+applyRole(role,false);
+LIVE.verify(()=>{applyRole('none');openGate('roles');});
+if(role==='none')openGate('roles',true);
+else if(deepPending){deepPending=false;GATE.hidden=true;}
+else openGate('courses',true);
+
+let start=0;const m=/^#s(\d+)$/.exec(location.hash||'');if(m)start=clamp(+m[1]-1,0,slides.length-1);
+go(start,1);
+})();
+</script>
+</body></html>

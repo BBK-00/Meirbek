@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Сынып сабағына арналған ашық ережелер: код пен аты-жөні бар кез келген адам жаза алады.
+    // Сабақтан кейін Firebase консолінде "Rules" бөлімінде осыны жауып қоюға болады.
+    match /lesson/{doc} { allow read, write: if true; }
+    match /runs/{doc}   { allow read, write: if true; }
+  }
+}

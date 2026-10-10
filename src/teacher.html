@@ -1,0 +1,44 @@
+<!--@T-->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<aside class="wheelbox t-only" id="wheelbox" hidden aria-label="Студент таңдайтын дөңгелек">
+  <div class="wh-head"><b>Кім жауап береді?</b><button class="mini" id="whClose" aria-label="Жабу">✕</button></div>
+  <div class="wh-ctx" id="whCtx"></div>
+  <canvas class="wh-cv" id="whCv" width="316" height="316" aria-label="Студенттер дөңгелегі"></canvas>
+  <button class="btn wh-spin" id="whSpin">Айналдыру</button>
+  <div class="wh-opt"><label><input type="checkbox" id="whNoRep" checked> Қайталамау</label><span id="whPool"></span></div>
+  <div class="wh-res">
+    <div class="wh-name" id="whName">—</div>
+    <div class="wh-btns"><button data-r="ok" disabled>✓ <span id="whOk"></span></button><button data-r="half" disabled>½ <span id="whHalf"></span></button><button data-r="no" disabled>✗ 0</button></div>
+    <div class="wh-note" id="whNote"></div>
+  </div>
+</aside>
+
+<div class="ovl t-only" id="gb" hidden role="dialog" aria-modal="true" aria-label="Журнал">
+  <div class="gb-card">
+    <div class="gb-head">
+      <h2>Журнал</h2>
+      <div class="gb-tabs" id="gbTabs" role="tablist"></div>
+      <span class="gb-sp"></span>
+      <input class="inp" id="gbSearch" type="search" placeholder="Іздеу…" autocomplete="off">
+      <span class="hint" id="gbSave"></span>
+      <button class="pill" id="gbUndo" title="Соңғы қосылған баллды болдырмау">↶ Болдырмау</button>
+      <button class="pill" id="gbBoard" title="Тақтаға шығару (B)">Кесте</button>
+      <button class="pill" id="gbCsv" title="Excel-ге жүктеу">CSV</button>
+      <button class="pill" id="gbClose" aria-label="Жабу">✕</button>
+    </div>
+    <div class="gb-body" id="gbBody"></div>
+  </div>
+</div>
+
+<div class="ovl board t-only" id="board" hidden role="dialog" aria-modal="true" aria-label="Балл кестесі">
+  <div class="bd-head">
+    <div><p class="eyebrow">Surface · 3ds Max · практика №7–8</p><h2>Балл кестесі</h2></div>
+    <div class="bd-sum" id="bdSum"></div>
+    <button class="pill" id="bdJ">Журнал</button>
+    <button class="pill" id="bdClose">✕ Жабу (Esc)</button>
+  </div>
+  <div class="bd-list" id="bdList"></div>
+  <div class="bd-foot"><span>Қатысым (40)</span><span class="t">Тапсырма (60)</span><span class="n">Барлығы: 100 балл</span><span class="n" id="bdGrades"></span></div>
+</div>
+<!--@/T-->

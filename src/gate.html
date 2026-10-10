@@ -1,0 +1,64 @@
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Кіру">
+  <header class="gt-top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><b>3D-модельдеу және CAD-жүйелер</b></div>
+    <div class="gt-tools">
+      <span class="phase" id="gtRole" hidden></span>
+      <button class="pill" id="gtSwitch" hidden>Рөлді ауыстыру</button>
+      <button class="pill" id="gtTheme" title="Тақырып: жарық / қараңғы">◐</button>
+    </div>
+  </header>
+  <main class="gt-main">
+    <section class="gt-screen" id="gtRoles">
+      <div class="gt-hero">
+        <p class="eyebrow">Қ. Жұбанов атындағы Ақтөбе өңірлік университеті · Компьютерлік инженерия</p>
+        <h1>Практикалық сабақтарға қош келдіңіз</h1>
+        <p class="lead">Кіру үшін рөліңізді таңдаңыз.</p>
+      </div>
+      <div class="gt-roles">
+        <button type="button" class="role s" data-role="student">
+          <span class="ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.6 3.5-5.4 7-5.4s6.4 1.8 7 5.4"/></svg></span>
+          <b>Студент</b>
+          <span class="d">Сабақты өтемін, параметрлерді өзгертіп көремін, ойын ойнап, тапсырма мен тест орындаймын.</span>
+          <span class="go">Кіру →</span>
+        </button>
+        <button type="button" class="role t" data-role="teacher">
+          <span class="ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="11" rx="1.6"/><path d="M8 20l4-5 4 5M7 9h6M7 12h9"/></svg></span>
+          <b>Мұғалім</b>
+          <span class="d">Сабақты түсіндіру: слайдтар, таймер, жазбалар. Код, балл және рейтинг журналда.</span>
+          <span class="go">Кіру →</span>
+        </button>
+      </div>
+      <div class="pw" id="gtPw" hidden>
+        <label>Мұғалімнің құпиясөзі<input class="inp" type="password" id="gtPwIn" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="err" id="gtPwErr" role="alert"></div>
+        <div class="row"><button class="btn" type="button" id="gtPwGo">Кіру</button><button class="btn ghost" type="button" id="gtPwBack">Артқа</button></div>
+      </div>
+    </section>
+
+    <section class="gt-screen" id="gtLogin" hidden>
+      <div class="gt-hero">
+        <p class="eyebrow">Студент · кіру</p>
+        <h2>Сабаққа кіру</h2>
+        <p class="lead">Тобыңыз бен атыңызды тізімнен таңдап, мұғалім экранға шығарған кодты жазыңыз.</p>
+      </div>
+      <div class="pw" id="lgBox">
+        <label>Сабақ коды<input class="inp code" id="lgCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000"></label>
+        <label>Тобы<select class="inp" id="lgGroup"></select></label>
+        <label>Аты-жөні<select class="inp" id="lgName"></select></label>
+        <div class="err" id="lgErr" role="alert"></div>
+        <div class="row"><button class="btn" type="button" id="lgGo">Кіру</button><button class="btn ghost" type="button" id="lgBack">Артқа</button></div>
+        <div class="lg-demo" id="lgDemo" hidden>DEMO режимі: Firebase бапталмаған. Деректер осы браузерде ғана сақталады.</div>
+      </div>
+    </section>
+
+    <section class="gt-screen" id="gtCourses" hidden>
+      <div class="gt-hero">
+        <p class="eyebrow">Курстар</p>
+        <h2>3D-модельдеу және CAD-жүйелер</h2>
+        <p class="lead">6B06105 · Компьютерлік инженерия · 3 курс. Практикалық сабақтар: 15 жұмыс, 13 сабақ.</p>
+        <div class="gt-stat" id="gtStat"></div>
+      </div>
+      <div class="gt-list" id="gtList"></div>
+    </section>
+  </main>
+</div>
