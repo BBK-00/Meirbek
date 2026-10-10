@@ -154,7 +154,7 @@ const newSid=()=>Date.now().toString(36);
 function start(){
   DB.session.on(s=>{
     const prev=sess&&sess.sid;sess=s;renderSession();renderRoster();renderAll();
-    if(s&&s.sid!==prev){if(offRuns)offRuns();offRuns=DB.runs.on(s.sid,r=>{runs=r;renderAll();});}
+    if(s&&s.sid&&s.sid!==prev){if(offRuns)offRuns();offRuns=DB.runs.on(s.sid,r=>{runs=r;renderAll();});}
     if(!s){runs=[];renderAll();}
   });
 }
@@ -178,7 +178,7 @@ $('#ccBtns').addEventListener('click',e=>{
 
 /* тізім */
 const roster=()=>Array.isArray(sess&&sess.roster)?sess.roster:[];
-const setRoster=l=>DB.session.set({roster:l});
+const setRoster=l=>{sess=Object.assign({},sess||{},{roster:l});renderRoster();renderAll();return DB.session.set({roster:l});};
 $('#rAdd').onclick=()=>{
   const g=$('#rGroup').value.trim().replace(/\s+/g,' '),cur=roster().slice();
   const names=$('#rNames').value.split('\n').map(x=>x.trim().replace(/\s+/g,' ')).filter(Boolean);
